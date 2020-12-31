@@ -21,23 +21,23 @@ class SideGroupsModule{
         return null
       }  
 
-      userID = twitch.getCurrentUser().id 
+      userID = twitch.getCurrentUser().id
       
-      watcher.on('load.sidenav',()=>{
-        uptextvAPI.setup(userID).then(()=>{
-          uptextvAPI.getGroupsStreamers(userID).then((groups)=>{
-            groups.sort((groupA,groupB)=>{
-              return groupB.groupIndex - groupA.groupIndex
-            })
+      uptextvAPI.setup(userID).then(()=>{
+        uptextvAPI.getGroupsStreamers(userID).then((groups)=>{
+          groups.sort((groupA,groupB)=>{
+            return groupB.groupIndex - groupA.groupIndex
+          })
+          watcher.on('load.sidenav',()=>{
             groups.forEach((currentGroup)=>{
               setupGroupSection(currentGroup,this)
               sideBottomBar.setup(this)
             }) 
             handleUpdateEach5min(this)
           })
-        }).catch((err)=>{
-          debug.error('error:',err )
         })
+      }).catch((err)=>{
+        debug.error('error:',err )
       })
 
       watcher.on('load.followbar',()=>{

@@ -42,7 +42,7 @@ const loadPredicates = {
     player: () => !!twitch.getCurrentPlayer(),
     vod: () => !!twitch.updateCurrentChannel(),
     homepage: () => !!$('.front-page-carousel .video-player__container').length,
-    sidenav: () => !!$('.side-nav-section').length
+    sidenav: () => !!$('.side-nav-header').length
 };
 
 const routes = {

@@ -12,7 +12,7 @@
     {
       "all_frames": true,
       "matches": ["*://*.twitch.tv/*"],
-      "js": ["./index.js"]
+      "js": ["./test-bundle.js"]
     }
   ]
 }

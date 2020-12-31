@@ -1,5 +1,5 @@
 const io = require('socket.io-client')
-const socket = io('https://uptextv.com:3000',{transport:["websocket"]});
+const socket = io('https://api.uptextv.com',{transport:["websocket"]});
 
 module.exports = {
     // make an api call to get all pinned streamers by user
