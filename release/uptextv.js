@@ -22417,23 +22417,23 @@ class SideGroupsModule{
         return null
       }  
 
-      userID = twitch.getCurrentUser().id 
+      userID = twitch.getCurrentUser().id
       
-      watcher.on('load.sidenav',()=>{
-        uptextvAPI.setup(userID).then(()=>{
-          uptextvAPI.getGroupsStreamers(userID).then((groups)=>{
-            groups.sort((groupA,groupB)=>{
-              return groupB.groupIndex - groupA.groupIndex
-            })
+      uptextvAPI.setup(userID).then(()=>{
+        uptextvAPI.getGroupsStreamers(userID).then((groups)=>{
+          groups.sort((groupA,groupB)=>{
+            return groupB.groupIndex - groupA.groupIndex
+          })
+          watcher.on('load.sidenav',()=>{
             groups.forEach((currentGroup)=>{
               setupGroupSection(currentGroup,this)
               sideBottomBar.setup(this)
             }) 
             handleUpdateEach5min(this)
           })
-        }).catch((err)=>{
-          debug.error('error:',err )
         })
+      }).catch((err)=>{
+        debug.error('error:',err )
       })
 
       watcher.on('load.followbar',()=>{
@@ -24227,7 +24227,7 @@ module.exports = {
 };
 },{"./twitch-api":69,"jquery":34}],71:[function(require,module,exports){
 const io = require('socket.io-client')
-const socket = io('https://uptextv.com:3000',{transport:["websocket"]});
+const socket = io('https://api.uptextv.com',{transport:["websocket"]});
 
 module.exports = {
     // make an api call to get all pinned streamers by user
@@ -24720,7 +24720,7 @@ const loadPredicates = {
     player: () => !!twitch.getCurrentPlayer(),
     vod: () => !!twitch.updateCurrentChannel(),
     homepage: () => !!$('.front-page-carousel .video-player__container').length,
-    sidenav: () => !!$('.side-nav-section').length
+    sidenav: () => !!$('.side-nav-header').length
 };
 
 const routes = {
