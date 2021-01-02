@@ -22,7 +22,7 @@ const loadPredicates = {
         if(followButton){
             if(followButton!=oldFollowButton){
                 oldFollowButton=followButton
-                debug.log(twitch.updateCurrentChannel())
+                twitch.updateCurrentChannel()
                 return true
             }else{
                 return null
@@ -42,7 +42,7 @@ const loadPredicates = {
     player: () => !!twitch.getCurrentPlayer(),
     vod: () => !!twitch.updateCurrentChannel(),
     homepage: () => !!$('.front-page-carousel .video-player__container').length,
-    sidenav: () => !!$('.side-nav-header').length
+    sidenav: () => document.querySelectorAll('[data-a-target="whisper-box-button"]').length
 };
 
 const routes = {

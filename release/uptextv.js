@@ -23680,7 +23680,6 @@ let accessToken;
 
 function request(method, path, options = {}) {
     const url = options.url || `${API_ENDPOINT}${path}${options.qs ? `?${querystring.stringify(options.qs)}` : ''}`;
-    console.log(url)
     return new Promise((resolve, reject) => {
         $.ajax({
             url,
@@ -24700,7 +24699,7 @@ const loadPredicates = {
         if(followButton){
             if(followButton!=oldFollowButton){
                 oldFollowButton=followButton
-                debug.log(twitch.updateCurrentChannel())
+                twitch.updateCurrentChannel()
                 return true
             }else{
                 return null
@@ -24720,7 +24719,7 @@ const loadPredicates = {
     player: () => !!twitch.getCurrentPlayer(),
     vod: () => !!twitch.updateCurrentChannel(),
     homepage: () => !!$('.front-page-carousel .video-player__container').length,
-    sidenav: () => !!$('.side-nav-header').length
+    sidenav: () => document.querySelectorAll('[data-a-target="whisper-box-button"]').length
 };
 
 const routes = {

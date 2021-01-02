@@ -9,7 +9,6 @@ let accessToken;
 
 function request(method, path, options = {}) {
     const url = options.url || `${API_ENDPOINT}${path}${options.qs ? `?${querystring.stringify(options.qs)}` : ''}`;
-    console.log(url)
     return new Promise((resolve, reject) => {
         $.ajax({
             url,
