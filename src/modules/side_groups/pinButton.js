@@ -253,19 +253,32 @@ DOMRect { x: 1315.2166748046875, y: 386, width: 40, height: 30, top: 386, right:
         
         // return -1 if streamer isn't in list in current group section
         if(streamerIndex!=-1){ 
-            input_current_group.checked="checked"
+            input_current_group.checked=true
         }
-        input_current_group.addEventListener('change', (event) => { // detect if checked to unchecked or unchecked to checked
-            if (event.target.checked) { // need to add streamer
+        input_current_group.addEventListener('change', () => { 
+            // detect if checked to unchecked or unchecked to checked
+            if (input_current_group.checked) { 
+                // need to add streamer
                 currentGroupSection.addStreamer(streamerID)
-            } else { // need to delete streamer
+            } else { 
+                // need to delete streamer
                 currentGroupSection.deleteStreamer(streamerID)
             }
         })
-
+  
         let label_current_group = document.createElement('label')
         label_current_group.innerText = currentGroupID_normal
         label_current_group.style.marginLeft='0.25rem'
+        label_current_group.addEventListener('click',()=>{
+            if(input_current_group.checked){
+                input_current_group.checked=false
+                currentGroupSection.deleteStreamer(streamerID)
+            }else{
+                input_current_group.checked=true
+                currentGroupSection.addStreamer(streamerID)
+            }
+        })
+  
 
         div_current_group.append(input_current_group)
         div_current_group.append(label_current_group)

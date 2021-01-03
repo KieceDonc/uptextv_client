@@ -21107,6 +21107,10 @@ class groupSection{
         }
     }  
 
+    checkSettingsMenuCollision(){
+        handleSettingsMenuCollision(this.getSideGroupsModule())
+    }
+
     sortStreamer(){
         this.groupSortBy.sort()
     }
@@ -21486,162 +21490,161 @@ function setup(currentGroupSection){
     let parentDiv = document.getElementsByClassName('side-bar-contents')[0].firstChild.firstChild.firstChild // getting div parent
 
     if(parentDiv){
-    // Start : Creating group section
-    let groupSection = document.createElement("div") 
-    giveTransitionStyle(groupSection)
-    groupSection.className="tw-relative tw-transition-group"
-    groupSection.id=mainDivID
-    parentDiv.prepend(groupSection) // placing groupSection on the top
-    // End
+        // Start : Creating group section
+        let groupSection = document.createElement("div") 
+        giveTransitionStyle(groupSection)
+        groupSection.className="tw-relative tw-transition-group"
+        groupSection.id=mainDivID
+        parentDiv.prepend(groupSection) // placing groupSection on the top
+        // End
 
-    // Start : Creating title like " chaines épinglées "
-    let parentTitleDiv = document.createElement("div")
-    giveTransitionStyle(parentTitleDiv)
-    parentTitleDiv.id=groupID+'_title'
-    parentTitleDiv.className="side-nav-header tw-flex"
+        // Start : Creating title like " chaines épinglées "
+        let parentTitleDiv = document.createElement("div")
+        giveTransitionStyle(parentTitleDiv)
+        parentTitleDiv.id=groupID+'_title'
+        parentTitleDiv.className="side-nav-header tw-flex"
 
 
-    let titleDiv = document.createElement("div")
-    titleDiv.className="side-nav-header-text tw-mg-1 tw-pd-t-05"
-    titleDiv.style.display='inline-flex' // use to display title and img on the same line
+        let titleDiv = document.createElement("div")
+        titleDiv.className="side-nav-header-text tw-mg-1 tw-pd-t-05"
+        titleDiv.style.display='inline-flex' // use to display title and img on the same line
 
-    let titleH5 = document.createElement("h5") // use to display the group Section name
-    titleH5.className="tw-font-size-6 tw-semibold tw-upcase"
-    titleH5.innerText=groupID_normal
+        let titleH5 = document.createElement("h5") // use to display the group Section name
+        titleH5.className="tw-font-size-6 tw-semibold tw-upcase"
+        titleH5.innerText=groupID_normal
 
-    let imgsToWatchDarkLightMode = new Array()
-    let giveImgsDesireStyle = function(img){
-        imgsToWatchDarkLightMode.push(img)
-        if(darkmode.isInDarkMode()){
-            img.style.filter='brightness(0) invert(1)'
+        let imgsToWatchDarkLightMode = new Array()
+        let giveImgsDesireStyle = function(img){
+            imgsToWatchDarkLightMode.push(img)
+            if(darkmode.isInDarkMode()){
+                img.style.filter='brightness(0) invert(1)'
+            }
+            img.style.cursor='pointer'
+            img.style.marginTop='auto'
+            img.style.marginBottom='auto'
+            img.style.marginLeft='0.5rem'
+            img.style.marginRight='0.5rem'
+            img.style.width='var(--font-size-5)'
+            img.style.height='var(--font-size-5)'
         }
-        img.style.cursor='pointer'
-        img.style.marginTop='auto'
-        img.style.marginBottom='auto'
-        img.style.marginLeft='0.5rem'
-        img.style.marginRight='0.5rem'
-        img.style.width='var(--font-size-5)'
-        img.style.height='var(--font-size-5)'
-    }
 
-    let imgHide_Show = document.createElement('img')
-    giveImgsDesireStyle(imgHide_Show)
-    giveTransitionStyle(imgHide_Show)
-    if(isGroupHiden){ // group is hide 
-        imgHide_Show.src = uptextvIMG.show
-    }else{
-        imgHide_Show.src= uptextvIMG.hide
-    }
-    imgHide_Show.addEventListener('click',()=>{
-        onHide_ShowButtonClic(currentGroupSection,imgHide_Show,groupID)
-    })
-    
-
-    let imgSettings = document.createElement('img') // use to display the settings button of the current group section
-    imgSettings.src=uptextvIMG.settings
-    giveImgsDesireStyle(imgSettings)
-    giveTransitionStyle(imgSettings)
-
-    let divSettingsMenu = document.createElement('div') // handle the settings menu 
-    giveTransitionStyle(divSettingsMenu)
-    divSettingsMenu.style.display='none'
-    divSettingsMenu.style.transform='scale(0)'
-
-    let imgBackArrowSettingsMenu = document.createElement('img')
-    imgBackArrowSettingsMenu.src=uptextvIMG.back_arrow
-    giveImgsDesireStyle(imgBackArrowSettingsMenu)
-    imgBackArrowSettingsMenu.addEventListener('click',function(){
-        onBackArrowSettingsMenuButtonClick(divSettingsMenu,imgSettings)
-    })
-
-    let imgDelete = document.createElement('img')
-    imgDelete.src=uptextvIMG.less
-    giveImgsDesireStyle(imgDelete)
-    imgDelete.addEventListener('click',function(){
-        let currentGroupIndex = sideGroupsModule.getGroupSectionIndexByID(groupID) // YOU MUST USE THIS FUNCTION TO GET THE INDEX BECAUSE THE INDEX ISN'T STATIC
-
-        onDeleteButtonClick(groupID,currentGroupIndex,sideGroupsModule)
-    })
-
-    let imgReorder = document.createElement('img')
-    imgReorder.src=uptextvIMG.reorder
-    giveImgsDesireStyle(imgReorder)
-
-    let divReorderMenu = document.createElement('div') // handle the settings menu 
-    giveTransitionStyle(divReorderMenu)
-    divReorderMenu.style.display='none'
-    divReorderMenu.style.transform='scale(0)'
-
-    let imgBackArrowReorderMenu = document.createElement('img')
-    imgBackArrowReorderMenu.src=uptextvIMG.back_arrow
-    giveImgsDesireStyle(imgBackArrowReorderMenu)
-    imgBackArrowReorderMenu.addEventListener('click',function(){
-        onBackArrowReorderMenuButtonClick(divReorderMenu,divSettingsMenu)
-    })
-
-    let imgArrowUp = document.createElement('img')
-    imgArrowUp.src=uptextvIMG.top_arrow
-    giveImgsDesireStyle(imgArrowUp)
-    imgArrowUp.addEventListener('click',function(){
-        let currentIndex = sideGroupsModule.getGroupSectionIndexByID(groupID) // YOU MUST USE THIS FUNCTION TO GET THE INDEX BECAUSE THE INDEX ISN'T STATIC
-        let groupSectionToMoveUp =  sideGroupsModule.getGroupSectionByIndex(currentIndex)
-        let groupSectionToMoveDown = sideGroupsModule.getGroupSectionByIndex(currentIndex-1)
-        // you check if the index you want really leads to a real group section 
-        if(groupSectionToMoveUp!=-1||groupSectionToMoveDown!=-1||(currentIndex-1)>=0){
-            onReorderUpOrDownButtonClick(groupSectionToMoveUp,groupSectionToMoveDown,sideGroupsModule)
+        let imgHide_Show = document.createElement('img')
+        giveImgsDesireStyle(imgHide_Show)
+        giveTransitionStyle(imgHide_Show)
+        if(isGroupHiden){ // group is hide 
+            imgHide_Show.src = uptextvIMG.show
+        }else{
+            imgHide_Show.src= uptextvIMG.hide
         }
-    })
-
-    let imgArrowDown = document.createElement('img')
-    imgArrowDown.src=uptextvIMG.bottom_arrow
-    giveImgsDesireStyle(imgArrowDown)
-    imgArrowDown.addEventListener('click',function(){
-        let currentIndex = sideGroupsModule.getGroupSectionIndexByID(groupID) // YOU MUST USE THIS FUNCTION TO GET THE INDEX BECAUSE THE INDEX ISN'T STATIC
-        let groupSectionToMoveUp =  sideGroupsModule.getGroupSectionByIndex(currentIndex+1)
-        let groupSectionToMoveDown = sideGroupsModule.getGroupSectionByIndex(currentIndex)
-        // you check if the index you want really leads to a real group section 
-        if(groupSectionToMoveUp!=-1||groupSectionToMoveDown!=-1||(currentIndex+1)<=sideGroupsModule.getGroupsSection().length){
-            onReorderUpOrDownButtonClick(groupSectionToMoveUp,groupSectionToMoveDown,sideGroupsModule)
-        }
-    })
-
-    imgReorder.addEventListener('click',function(){ // MUST STAY AFTER THE DECLARATION OF DIVREORDERMENU CUZ YOU PASS IT IN PARAMS
-        onReorderButtonClick(divReorderMenu,divSettingsMenu)
-    })
-
-    imgSettings.addEventListener('click',function(){ // MUST STAY AFTER THE DECLARATION OF DIVSETTINGSMENU CUZ YOU PASS IT IN PARAMS
-        onSettingsButtonClick(imgSettings,divSettingsMenu)
-    })
-
-    // every time user switch to dark mode we change imgs to white ( from black )
-    darkmode.onDarkMode(()=>{
-        imgsToWatchDarkLightMode.forEach((currentElement)=>{
-            currentElement.style.filter='brightness(0) invert(1)'
+        imgHide_Show.addEventListener('click',()=>{
+            onHide_ShowButtonClic(currentGroupSection,imgHide_Show,groupID)
         })
-    })
+        
 
-    // every time user switch to dark mode we change imgs to black ( from white )
-    darkmode.onLightMode(()=>{
-        imgsToWatchDarkLightMode.forEach((currentElement)=>{
-            currentElement.style.filter=''
+        let imgSettings = document.createElement('img') // use to display the settings button of the current group section
+        imgSettings.src=uptextvIMG.settings
+        giveImgsDesireStyle(imgSettings)
+        giveTransitionStyle(imgSettings)
+
+        let divSettingsMenu = document.createElement('div') // handle the settings menu 
+        giveTransitionStyle(divSettingsMenu)
+        divSettingsMenu.style.display='none'
+        divSettingsMenu.style.transform='scale(0)'
+
+        let imgBackArrowSettingsMenu = document.createElement('img')
+        imgBackArrowSettingsMenu.src=uptextvIMG.back_arrow
+        giveImgsDesireStyle(imgBackArrowSettingsMenu)
+        imgBackArrowSettingsMenu.addEventListener('click',function(){
+            onBackArrowSettingsMenuButtonClick(divSettingsMenu,imgSettings)
         })
-    })
 
-    parentDiv.prepend(parentTitleDiv)
-    parentTitleDiv.appendChild(titleDiv);
-    titleDiv.appendChild(titleH5)
-    titleDiv.appendChild(imgHide_Show)
-    titleDiv.appendChild(imgSettings)
-    titleDiv.appendChild(divSettingsMenu)
-    titleDiv.appendChild(divReorderMenu)
-    divSettingsMenu.appendChild(imgBackArrowSettingsMenu)
-    divSettingsMenu.appendChild(imgDelete)
-    divSettingsMenu.appendChild(imgReorder)
-    //divSettingsMenu.append(imgColorPicker)
-    divReorderMenu.appendChild(imgBackArrowReorderMenu)
-    divReorderMenu.appendChild(imgArrowUp)
-    divReorderMenu.appendChild(imgArrowDown)
-    // End
+        let imgDelete = document.createElement('img')
+        imgDelete.src=uptextvIMG.less
+        giveImgsDesireStyle(imgDelete)
+        imgDelete.addEventListener('click',function(){
+            let currentGroupIndex = sideGroupsModule.getGroupSectionIndexByID(groupID) // YOU MUST USE THIS FUNCTION TO GET THE INDEX BECAUSE THE INDEX ISN'T STATIC
+
+            onDeleteButtonClick(groupID,currentGroupIndex,sideGroupsModule)
+            handleSettingsMenuCollision(sideGroupsModule)
+        })
+
+        let imgReorder = document.createElement('img')
+        imgReorder.src=uptextvIMG.reorder
+        giveImgsDesireStyle(imgReorder)
+
+        let divReorderMenu = document.createElement('div') // handle the settings menu 
+        giveTransitionStyle(divReorderMenu)
+        divReorderMenu.style.display='none'
+        divReorderMenu.style.transform='scale(0)'
+
+        let imgBackArrowReorderMenu = document.createElement('img')
+        imgBackArrowReorderMenu.src=uptextvIMG.back_arrow
+        giveImgsDesireStyle(imgBackArrowReorderMenu)
+        imgBackArrowReorderMenu.addEventListener('click',function(){
+            onBackArrowReorderMenuButtonClick(divReorderMenu,divSettingsMenu)
+        })
+
+        let imgArrowUp = document.createElement('img')
+        imgArrowUp.src=uptextvIMG.top_arrow
+        giveImgsDesireStyle(imgArrowUp)
+        imgArrowUp.addEventListener('click',function(){
+            let currentIndex = sideGroupsModule.getGroupSectionIndexByID(groupID) // YOU MUST USE THIS FUNCTION TO GET THE INDEX BECAUSE THE INDEX ISN'T STATIC
+            let groupSectionToMoveUp =  sideGroupsModule.getGroupSectionByIndex(currentIndex)
+            let groupSectionToMoveDown = sideGroupsModule.getGroupSectionByIndex(currentIndex-1)
+            // you check if the index you want really leads to a real group section 
+            if(groupSectionToMoveUp!=-1||groupSectionToMoveDown!=-1||(currentIndex-1)>=0){
+                onReorderUpOrDownButtonClick(groupSectionToMoveUp,groupSectionToMoveDown,sideGroupsModule)
+            }
+        })
+
+        let imgArrowDown = document.createElement('img')
+        imgArrowDown.src=uptextvIMG.bottom_arrow
+        giveImgsDesireStyle(imgArrowDown)
+        imgArrowDown.addEventListener('click',function(){
+            let currentIndex = sideGroupsModule.getGroupSectionIndexByID(groupID) // YOU MUST USE THIS FUNCTION TO GET THE INDEX BECAUSE THE INDEX ISN'T STATIC
+            let groupSectionToMoveUp =  sideGroupsModule.getGroupSectionByIndex(currentIndex+1)
+            let groupSectionToMoveDown = sideGroupsModule.getGroupSectionByIndex(currentIndex)
+            // you check if the index you want really leads to a real group section 
+            if(groupSectionToMoveUp!=-1||groupSectionToMoveDown!=-1||(currentIndex+1)<=sideGroupsModule.getGroupsSection().length){
+                onReorderUpOrDownButtonClick(groupSectionToMoveUp,groupSectionToMoveDown,sideGroupsModule)
+            }
+        })
+
+        imgReorder.addEventListener('click',function(){ // MUST STAY AFTER THE DECLARATION OF DIVREORDERMENU CUZ YOU PASS IT IN PARAMS
+            onReorderButtonClick(divReorderMenu,divSettingsMenu)
+        })
+
+        imgSettings.addEventListener('click',function(){ // MUST STAY AFTER THE DECLARATION OF DIVSETTINGSMENU CUZ YOU PASS IT IN PARAMS
+            onSettingsButtonClick(imgSettings,divSettingsMenu)
+        })
+
+        // every time user switch to dark mode we change imgs to white ( from black )
+        darkmode.onDarkMode(()=>{
+            imgsToWatchDarkLightMode.forEach((currentElement)=>{
+                currentElement.style.filter='brightness(0) invert(1)'
+            })
+        })
+
+        // every time user switch to dark mode we change imgs to black ( from white )
+        darkmode.onLightMode(()=>{
+            imgsToWatchDarkLightMode.forEach((currentElement)=>{
+                currentElement.style.filter=''
+            })
+        })
+
+        parentDiv.prepend(parentTitleDiv)
+        parentTitleDiv.appendChild(titleDiv)
+        titleDiv.appendChild(titleH5)
+        titleDiv.appendChild(imgHide_Show)
+        titleDiv.appendChild(imgSettings)
+        titleDiv.appendChild(divSettingsMenu)
+        titleDiv.appendChild(divReorderMenu)
+        divSettingsMenu.appendChild(imgBackArrowSettingsMenu)
+        divSettingsMenu.appendChild(imgDelete)
+        divSettingsMenu.appendChild(imgReorder)
+        divReorderMenu.appendChild(imgBackArrowReorderMenu)
+        divReorderMenu.appendChild(imgArrowUp)
+        divReorderMenu.appendChild(imgArrowDown)
     }else{
         debug.error('parentdiv is null, you should look at css properties about getElementsByClassName')
     }
@@ -21827,8 +21830,42 @@ function onReorderUpOrDownButtonClick(groupSectionToMoveUp,groupSectionToMoveDow
         HTMLElementMoveUp.after(HTMLElementMoveDown)
         HTMLElementTitleMoveUp.after(HTMLElementMoveUp)
         HTMLElementTitleMoveDown.after(HTMLElementMoveDown)
+        handleSettingsMenuCollision(sideGroupsModule)
     },250)
-    
+}
+
+/**
+ * handle settings menu for all groupSection ( you just need to check for 0 and 1 ) collision with collaspe button
+ * @param {sideGroupsModule} sideGroupsModule
+ */
+function handleSettingsMenuCollision(sideGroupsModule){
+
+    handleSettingsMenuCollisionForOneGroupSection(sideGroupsModule,0)
+    if(sideGroupsModule.getGroupsSection().length>1){
+        // you have to check groupSection with index 1
+        // when groupSection with current index 1 was maybe old groupSection with index 0 
+        // so groupSection with currender index 1 might have style.display=""
+        // problem you want style.display="inline-flex" ( more beautifull )
+        // so you have to check
+        handleSettingsMenuCollisionForOneGroupSection(sideGroupsModule,1)
+    }
+}
+
+/**
+ * handle settings menu collision with collaspe button but only for one group section
+ * @param {Int} groupSectionIndexToCheck 
+ */
+function handleSettingsMenuCollisionForOneGroupSection(sideGroupsModule,groupSectionIndexToCheck){
+    let groupSection = sideGroupsModule.getGroupSectionByIndex(groupSectionIndexToCheck)
+    let settingsMenu = document.getElementById(groupSection.getGroupID()+"_title")
+
+    let collaspeButton = getCollaspeButton()
+
+    if(isInCollision(settingsMenu,collaspeButton)){
+        settingsMenu.firstChild.style.display=''
+    }else{
+        settingsMenu.firstChild.style.display='inline-flex'
+    }
 }
 
 /**
@@ -22189,6 +22226,32 @@ function getViewerCountWithSpaces(viewerCount){
         return withSpaces.substring(0,withSpaces.length-1)
 }
 
+/**
+ * detected if two element are in collision
+ */
+function isInCollision(el1,el2){
+    el1.offsetBottom = el1.offsetTop + el1.offsetHeight;
+    el1.offsetRight = el1.offsetLeft + el1.offsetWidth;
+    el2.offsetBottom = el2.offsetTop + el2.offsetHeight;
+    el2.offsetRight = el2.offsetLeft + el2.offsetWidth;
+
+    return !((el1.offsetBottom < el2.offsetTop) ||
+             (el1.offsetTop > el2.offsetBottom) ||
+             (el1.offsetRight < el2.offsetLeft) ||
+             (el1.offsetLeft > el2.offsetRight))
+}
+
+/**
+ * Handle collaspeButton 
+ */
+var collaspeButton_save = null
+function getCollaspeButton(){
+    if(collaspeButton_save==null){
+        collaspeButton_save = document.querySelectorAll('[data-a-target="side-nav-arrow"]')[0]
+    }
+    return collaspeButton_save
+}
+
 
 module.exports = {
     setup:function(_groupObject,_sideGroupsModule){
@@ -22428,7 +22491,8 @@ class SideGroupsModule{
             groups.forEach((currentGroup)=>{
               setupGroupSection(currentGroup,this)
               sideBottomBar.setup(this)
-            }) 
+            })
+            checkSettingsMenuCollision()
             handleUpdateEach5min(this)
           })
         })
@@ -22582,6 +22646,15 @@ function updateStreamersInfo(sideGroupsModule){
     }).catch((err)=>{
         debug.error('error while trying to get pinned streamers through the api. err :',err )
     })
+}
+
+/**
+ * use to check if the settings menu with index 0 is in collision with collaspe button
+ */
+function checkSettingsMenuCollision(){
+  if(groupsSection.length>=1){
+    groupsSection[groupsSection.length-1].checkSettingsMenuCollision()
+  }
 }
 
 module.exports = new SideGroupsModule()
@@ -22841,19 +22914,32 @@ DOMRect { x: 1315.2166748046875, y: 386, width: 40, height: 30, top: 386, right:
         
         // return -1 if streamer isn't in list in current group section
         if(streamerIndex!=-1){ 
-            input_current_group.checked="checked"
+            input_current_group.checked=true
         }
-        input_current_group.addEventListener('change', (event) => { // detect if checked to unchecked or unchecked to checked
-            if (event.target.checked) { // need to add streamer
+        input_current_group.addEventListener('change', () => { 
+            // detect if checked to unchecked or unchecked to checked
+            if (input_current_group.checked) { 
+                // need to add streamer
                 currentGroupSection.addStreamer(streamerID)
-            } else { // need to delete streamer
+            } else { 
+                // need to delete streamer
                 currentGroupSection.deleteStreamer(streamerID)
             }
         })
-
+  
         let label_current_group = document.createElement('label')
         label_current_group.innerText = currentGroupID_normal
         label_current_group.style.marginLeft='0.25rem'
+        label_current_group.addEventListener('click',()=>{
+            if(input_current_group.checked){
+                input_current_group.checked=false
+                currentGroupSection.deleteStreamer(streamerID)
+            }else{
+                input_current_group.checked=true
+                currentGroupSection.addStreamer(streamerID)
+            }
+        })
+  
 
         div_current_group.append(input_current_group)
         div_current_group.append(label_current_group)
