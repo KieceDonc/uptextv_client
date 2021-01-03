@@ -32,7 +32,8 @@ class SideGroupsModule{
             groups.forEach((currentGroup)=>{
               setupGroupSection(currentGroup,this)
               sideBottomBar.setup(this)
-            }) 
+            })
+            checkSettingsMenuCollision()
             handleUpdateEach5min(this)
           })
         })
@@ -186,6 +187,15 @@ function updateStreamersInfo(sideGroupsModule){
     }).catch((err)=>{
         debug.error('error while trying to get pinned streamers through the api. err :',err )
     })
+}
+
+/**
+ * use to check if the settings menu with index 0 is in collision with collaspe button
+ */
+function checkSettingsMenuCollision(){
+  if(groupsSection.length>=1){
+    groupsSection[groupsSection.length-1].checkSettingsMenuCollision()
+  }
 }
 
 module.exports = new SideGroupsModule()
