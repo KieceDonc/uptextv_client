@@ -1,9 +1,9 @@
   {
   "manifest_version": 2,
   "name": "uptextv",
-  "version": "2.5.7",
+  "version": "2.5.8",
 
-  "description": "Pin and categorize your favorite channels on twitch",
+  "description": "Pin and categorise your favourite channels on twitch",
 
   "permissions": ["*://*.twitch.tv/*"],
   "web_accessible_resources": ["uptextv.js"],

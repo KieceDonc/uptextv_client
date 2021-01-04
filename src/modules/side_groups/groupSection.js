@@ -487,7 +487,6 @@ function setup(currentGroupSection){
             let currentGroupIndex = sideGroupsModule.getGroupSectionIndexByID(groupID) // YOU MUST USE THIS FUNCTION TO GET THE INDEX BECAUSE THE INDEX ISN'T STATIC
 
             onDeleteButtonClick(groupID,currentGroupIndex,sideGroupsModule)
-            handleSettingsMenuCollision(sideGroupsModule)
         })
 
         let imgReorder = document.createElement('img')
@@ -758,6 +757,7 @@ function onReorderUpOrDownButtonClick(groupSectionToMoveUp,groupSectionToMoveDow
 
 /**
  * handle settings menu for all groupSection ( you just need to check for 0 and 1 ) collision with collaspe button
+ * handle when a group name is too long
  * @param {sideGroupsModule} sideGroupsModule
  */
 function handleSettingsMenuCollision(sideGroupsModule){
@@ -775,6 +775,7 @@ function handleSettingsMenuCollision(sideGroupsModule){
 
 /**
  * handle settings menu collision with collaspe button but only for one group section
+ * handle when a group name is too long
  * @param {Int} groupSectionIndexToCheck 
  */
 function handleSettingsMenuCollisionForOneGroupSection(sideGroupsModule,groupSectionIndexToCheck){
@@ -783,7 +784,7 @@ function handleSettingsMenuCollisionForOneGroupSection(sideGroupsModule,groupSec
 
     let collaspeButton = getCollaspeButton()
 
-    if(isInCollision(settingsMenu,collaspeButton)){
+    if(isInCollision(settingsMenu,collaspeButton) || settingsMenu.firstChild.firstChild.innerText.length > 13){
         settingsMenu.firstChild.style.display=''
     }else{
         settingsMenu.firstChild.style.display='inline-flex'

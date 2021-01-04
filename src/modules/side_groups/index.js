@@ -84,6 +84,7 @@ class SideGroupsModule{
           currentGroupSection.setGroupIndex(currentGroupSection.getGroupIndex()+1)
         }) 
         setupGroupSection(newGroupObject,this)
+        this.getGroupSectionByIndex(0).checkSettingsMenuCollision()
       }).catch((err)=>{
         debug.error('error while trying to add a new group in index.js',err)
       })
@@ -102,6 +103,7 @@ class SideGroupsModule{
           currentGroupSection.setGroupIndex(currentGroupSectionIndex-1)
         }
       })
+      this.getGroupSectionByIndex(0).checkSettingsMenuCollision()
     }
 
     getGroupSectionIndexByID(groupID){
@@ -190,12 +192,12 @@ function updateStreamersInfo(sideGroupsModule){
 }
 
 /**
- * use to check if the settings menu with index 0 is in collision with collaspe button
+ * use to check if the settings menu as a collision
  */
 function checkSettingsMenuCollision(){
-  if(groupsSection.length>=1){
-    groupsSection[groupsSection.length-1].checkSettingsMenuCollision()
-  }
+  groupsSection.forEach((currentGroupSection)=>{
+    currentGroupSection.checkSettingsMenuCollision()
+  })
 }
 
 module.exports = new SideGroupsModule()

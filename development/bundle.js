@@ -21565,7 +21565,6 @@ function setup(currentGroupSection){
             let currentGroupIndex = sideGroupsModule.getGroupSectionIndexByID(groupID) // YOU MUST USE THIS FUNCTION TO GET THE INDEX BECAUSE THE INDEX ISN'T STATIC
 
             onDeleteButtonClick(groupID,currentGroupIndex,sideGroupsModule)
-            handleSettingsMenuCollision(sideGroupsModule)
         })
 
         let imgReorder = document.createElement('img')
@@ -21836,6 +21835,7 @@ function onReorderUpOrDownButtonClick(groupSectionToMoveUp,groupSectionToMoveDow
 
 /**
  * handle settings menu for all groupSection ( you just need to check for 0 and 1 ) collision with collaspe button
+ * handle when a group name is too long
  * @param {sideGroupsModule} sideGroupsModule
  */
 function handleSettingsMenuCollision(sideGroupsModule){
@@ -21853,6 +21853,7 @@ function handleSettingsMenuCollision(sideGroupsModule){
 
 /**
  * handle settings menu collision with collaspe button but only for one group section
+ * handle when a group name is too long
  * @param {Int} groupSectionIndexToCheck 
  */
 function handleSettingsMenuCollisionForOneGroupSection(sideGroupsModule,groupSectionIndexToCheck){
@@ -21861,7 +21862,7 @@ function handleSettingsMenuCollisionForOneGroupSection(sideGroupsModule,groupSec
 
     let collaspeButton = getCollaspeButton()
 
-    if(isInCollision(settingsMenu,collaspeButton)){
+    if(isInCollision(settingsMenu,collaspeButton) || settingsMenu.firstChild.firstChild.innerText.length > 13){
         settingsMenu.firstChild.style.display=''
     }else{
         settingsMenu.firstChild.style.display='inline-flex'
@@ -22543,6 +22544,7 @@ class SideGroupsModule{
           currentGroupSection.setGroupIndex(currentGroupSection.getGroupIndex()+1)
         }) 
         setupGroupSection(newGroupObject,this)
+        this.getGroupSectionByIndex(0).checkSettingsMenuCollision()
       }).catch((err)=>{
         debug.error('error while trying to add a new group in index.js',err)
       })
@@ -22561,6 +22563,7 @@ class SideGroupsModule{
           currentGroupSection.setGroupIndex(currentGroupSectionIndex-1)
         }
       })
+      this.getGroupSectionByIndex(0).checkSettingsMenuCollision()
     }
 
     getGroupSectionIndexByID(groupID){
@@ -22649,12 +22652,12 @@ function updateStreamersInfo(sideGroupsModule){
 }
 
 /**
- * use to check if the settings menu with index 0 is in collision with collaspe button
+ * use to check if the settings menu as a collision
  */
 function checkSettingsMenuCollision(){
-  if(groupsSection.length>=1){
-    groupsSection[groupsSection.length-1].checkSettingsMenuCollision()
-  }
+  groupsSection.forEach((currentGroupSection)=>{
+    currentGroupSection.checkSettingsMenuCollision()
+  })
 }
 
 module.exports = new SideGroupsModule()
