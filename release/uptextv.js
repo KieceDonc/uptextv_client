@@ -21615,6 +21615,7 @@ function setup(currentGroupSection){
 
         imgSettings.addEventListener('click',function(){ // MUST STAY AFTER THE DECLARATION OF DIVSETTINGSMENU CUZ YOU PASS IT IN PARAMS
             onSettingsButtonClick(imgSettings,divSettingsMenu)
+            handleSettingsMenuCollision(sideGroupsModule)
         })
 
         // every time user switch to dark mode we change imgs to white ( from black )
