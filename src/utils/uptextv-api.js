@@ -219,8 +219,20 @@ module.exports = {
                 }
             })
         })
-    }
+    },
 
+    getUserIDByName(userName){
+        return new Promise((resolve,reject)=>{
+            socket.emit('get_userID_by_name',userName)
+            socket.on('callback_get_userID_by_name',(reply,userID)=>{
+                if(reply=='done'){
+                    resolve(userID)
+                }else{
+                    reject(reply)
+                }
+            })
+        })
+    },
 }
 
   

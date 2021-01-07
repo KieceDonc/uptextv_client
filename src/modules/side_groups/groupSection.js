@@ -1068,7 +1068,7 @@ function streamerGoesOnline(groupID,streamerInfo,liveColor){
 
     div9.className = "tw-align-items-center tw-flex"
 
-    div10.className="tw-border-radius-rounded tw-channel-status-indicator--live tw-channel-status-indicator--small tw-inline-block tw-relative"
+    div10.className="ScChannelStatusIndicator-sc-1cf6j56-0 fSVvnY tw-channel-status-indicator"
     div10.style.setProperty("background-color", liveColor, "important");
 
     div11.className="tw-mg-l-05"

@@ -3,9 +3,9 @@ const twitch = require('../../utils/twitch')
 const uptextvAPI = require('../../utils/uptextv-api')
 const debug = require('../../utils/debug')
 const groupSection = require('./groupSection')
-const pinButton = require('./pinButton');
+const pinButtonFollow = require('./pinButtonFollow');
+const pinButtonSideNav = require('./pinButtonSideNav')
 const sideBottomBar = require('./sideBottomBar');
-const follow = require('../../watchers/follow')
 
 const defaultLiveColor = '#007aa3'
 
@@ -34,6 +34,7 @@ class SideGroupsModule{
               sideBottomBar.setup(this)
             })
             checkSettingsMenuCollision()
+            pinButtonSideNav.setup(this)
             handleUpdateEach5min(this)
           })
         })
@@ -42,20 +43,7 @@ class SideGroupsModule{
       })
 
       watcher.on('load.followbar',()=>{
-        var pinButtonInstance = null
-
-        if(follow.isFollowing){
-          pinButtonInstance = pinButton.setup(this)
-        }
-
-        follow.onFollow(()=>{
-          pinButtonInstance = pinButton.setup(this)
-        })
-
-        follow.onUnfollow(()=>{
-          pinButtonInstance.selfRemove()
-          pinButtonInstance = null
-        })  
+        pinButtonFollow.setup(this)  
       }) 
     }
 

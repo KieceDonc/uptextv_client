@@ -2,6 +2,7 @@ const $ = require('jquery');
 const uptextvIMG = require('../../utils/uptextv-image').get()
 const darkmode = require('../../watchers/darkmode.js')
 const twitch = require('../../utils/twitch')
+const follow = require('../../watchers/follow')
 const debug = require('../../utils/debug')
 
 var sideGroupsModule
@@ -37,109 +38,113 @@ function removePinButton(){
 function setup(){
     let buttonID = "pin-button"
     let parentdiv = document.getElementsByClassName("tw-align-items-center tw-flex tw-full-height tw-overflow-hidden")[0]
-  
+
     if(parentdiv!=null){
-  
-      let div0 = document.createElement("div")
-      div0.className= "follow-btn__notification-toggle-container follow-btn__notification-toggle-container--visible tw-mg-l-1"
-  
-      let div1 = document.createElement("div")
-  
-      let div2 = document.createElement("div") // ADD MOUSE OVER / LEFT
-      div2.addEventListener("mouseover",function(){
+
+        let div0 = document.createElement("div")
+        div0.className= "follow-btn__notification-toggle-container follow-btn__notification-toggle-container--visible tw-mg-l-1"
+
+        let div1 = document.createElement("div")
+
+        let div2 = document.createElement("div") // ADD MOUSE OVER / LEFT
+        div2.addEventListener("mouseover",function(){
         changePinButtonBackgroundColorToBlue()
-      })
-      div2.addEventListener("mouseleave",function(){
-        if(!isMenuToPinSetup()){
+        })
+        div2.addEventListener("mouseleave",function(){
             changePinButtonBackgroundColorToNormal()
-        }
-      })
-  
-      let div3 = document.createElement("div")
-      div3.className="tw-border-radius-medium tw-c-background-base tw-inline-flex tw-overflow-hidden"
-  
-      let button0 = document.createElement("button") // HANDLE PIN / UNPIN / ADD TO SIDE SECTION / DELETE FROM SIDE SECTION
-      button0.id=buttonID
-      button0.className="tw-align-items-center tw-align-middle tw-border-bottom-left-radius-medium tw-border-bottom-right-radius-medium tw-border-top-left-radius-medium tw-border-top-right-radius-medium tw-core-button tw-core-button--secondary tw-full-width tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative"
-      button0.addEventListener('click', function(){
+        })
+
+        let div3 = document.createElement("div")
+        div3.className="tw-border-radius-medium tw-c-background-base tw-inline-flex tw-overflow-hidden"
+
+        let button0 = document.createElement("button") // HANDLE PIN / UNPIN / ADD TO SIDE SECTION / DELETE FROM SIDE SECTION
+        button0.id=buttonID
+        button0.className="tw-align-items-center tw-align-middle tw-border-bottom-left-radius-medium tw-border-bottom-right-radius-medium tw-border-top-left-radius-medium tw-border-top-right-radius-medium tw-core-button tw-core-button--secondary tw-full-width tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative"
+        button0.addEventListener('click', function(){
         buttonTreatment()
-      })
+        })
 
-      // you have a small bug when you switch from light to dark 
-      // button rgba aren't the same so you handle it here
-      darkmode.onDarkMode(()=>{
-        if(!isMenuToPinSetup()){
-            button0.style.backgroundColor='rgba(255, 255, 255, 0.15)'
+        // you have a small bug when you switch from light to dark 
+        // button rgba aren't the same so you handle it here
+        darkmode.onDarkMode(()=>{
+        button0.style.backgroundColor='rgba(255, 255, 255, 0.15)'
+        })
+
+        // you have a small bug when you switch from light to dark 
+        // button rgba aren't the same so you handle it here
+        darkmode.onLightMode(()=>{
+        button0.style.backgroundColor='rgba(0, 0, 0, 0.05)'
+        })
+
+        let div4 = document.createElement("div")
+        div4.className="tw-align-items-center tw-core-button-label tw-flex tw-flex-grow-0"
+
+        let div5 = document.createElement("div")
+        div5.className="tw-flex-grow-0"
+
+        let div6 = document.createElement("div")
+        div6.className="tw-align-items-center tw-flex tw-justify-content-center"
+
+        let div7 = document.createElement("div")
+        div7.className="tw-align-items-center tw-flex tw-justify-content-center tw-mg-r-0"
+        div7.style="transform: translateX(0px) scale(1); transition: transform 300ms ease 0s;"
+
+        let div8 = document.createElement("div")
+        div8.className="tw-animation tw-animation--bounce-in tw-animation--duration-long tw-animation--fill-mode-both tw-animation--timing-ease"
+
+        let div9 = document.createElement("div")
+        div9.className="tw-align-items-center tw-flex tw-justify-content-center"
+
+        let figure0 = document.createElement("figure")
+        figure0.className="tw-svg"
+
+        let img0 = document.createElement("img")
+        img0.className="tw-svg__asset tw-svg__asset--inherit tw-svg__asset--notificationbell"
+        img0.src=uptextvIMG.pin_icon//browser.runtime.getURL("../src/assets/icon/icon-pin-mouse-over.svg");
+        img0.style.maxWidth='20px'
+
+        if(darkmode.isInDarkMode()){
+            img0.style.filter="invert(90%)"
+        }else{
+            img0.style.filter="invert(10%)"
         }
-      })
 
-      // you have a small bug when you switch from light to dark 
-      // button rgba aren't the same so you handle it here
-      darkmode.onLightMode(()=>{
-          if(!isMenuToPinSetup()){
-            button0.style.backgroundColor='rgba(0, 0, 0, 0.05)'
-          }
-      })
-  
-      let div4 = document.createElement("div")
-      div4.className="tw-align-items-center tw-core-button-label tw-flex tw-flex-grow-0"
-    
-      let div5 = document.createElement("div")
-      div5.className="tw-flex-grow-0"
-  
-      let div6 = document.createElement("div")
-      div6.className="tw-align-items-center tw-flex tw-justify-content-center"
-  
-      let div7 = document.createElement("div")
-      div7.className="tw-align-items-center tw-flex tw-justify-content-center tw-mg-r-0"
-      div7.style="transform: translateX(0px) scale(1); transition: transform 300ms ease 0s;"
-  
-      let div8 = document.createElement("div")
-      div8.className="tw-animation tw-animation--bounce-in tw-animation--duration-long tw-animation--fill-mode-both tw-animation--timing-ease"
-  
-      let div9 = document.createElement("div")
-      div9.className="tw-align-items-center tw-flex tw-justify-content-center"
-  
-      let figure0 = document.createElement("figure")
-      figure0.className="tw-svg"
-  
-      let img0 = document.createElement("img")
-      img0.className="tw-svg__asset tw-svg__asset--inherit tw-svg__asset--notificationbell"
-      img0.src=uptextvIMG.pin_icon//browser.runtime.getURL("../src/assets/icon/icon-pin-mouse-over.svg");
-      img0.style.maxWidth='20px'
-
-      if(darkmode.isInDarkMode()){
-          img0.style.filter="invert(90%)"
-      }else{
-          img0.style.filter="invert(10%)"
-      }
-
-      darkmode.onDarkMode(()=>{
+        darkmode.onDarkMode(()=>{
         img0.style.filter="invert(90%)"
-      })
+        })
 
-      darkmode.onLightMode(()=>{
+        darkmode.onLightMode(()=>{
         img0.style.filter="invert(10%)"
-      })
-  
-      let span0 = document.createElement("span")
-      span0.style="opacity: 1; transform: translateX(0px); transition: all 300ms ease 300ms;"
-  
-      parentdiv.appendChild(div0)
-      div0.appendChild(div1)
-      div1.appendChild(div2)
-      div2.appendChild(div3)
-      div3.appendChild(button0)
-      button0.append(div4)
-      div4.appendChild(div5)
-      div5.appendChild(div6)
-      div6.appendChild(div7)
-      div7.appendChild(div8)
-      div8.appendChild(div9)
-      div9.appendChild(figure0)
-      figure0.appendChild(img0)
-      div8.appendChild(span0)
+        })
+
+        let span0 = document.createElement("span")
+        span0.style="opacity: 1; transform: translateX(0px); transition: all 300ms ease 300ms;"
+
+        parentdiv.appendChild(div0)
+        div0.appendChild(div1)
+        div1.appendChild(div2)
+        div2.appendChild(div3)
+        div3.appendChild(button0)
+        button0.append(div4)
+        div4.appendChild(div5)
+        div5.appendChild(div6)
+        div6.appendChild(div7)
+        div7.appendChild(div8)
+        div8.appendChild(div9)
+        div9.appendChild(figure0)
+        figure0.appendChild(img0)
+        div8.appendChild(span0)
     }
+    if(!follow.isFollowing()){
+        document.getElementById('pin-button').style.display="none"
+    }
+    follow.onFollow(()=>{
+        document.getElementById('pin-button').style.display=""
+    })
+
+    follow.onUnfollow(()=>{
+        document.getElementById('pin-button').style.display="none"
+    })
 }
 
 // title of function prelly clear
@@ -225,6 +230,7 @@ DOMRect { x: 1315.2166748046875, y: 386, width: 40, height: 30, top: 386, right:
     div1.append(div3)
 
     let groupsSection = sideGroupsModule.getGroupsSection()
+    let streamerID = twitch.getCurrentChannel().id
     for(let x=0;x<groupsSection.length;x++){
         // we parse array from the end to the beginning
         // we do to get each groupSection name in the same order as displayed
@@ -232,7 +238,6 @@ DOMRect { x: 1315.2166748046875, y: 386, width: 40, height: 30, top: 386, right:
         let currentGroupSection = groupsSection[x]
         let currentGroupID = currentGroupSection.getGroupID()
         let currentGroupID_normal = currentGroupSection.getGroupID_normal()
-        let streamerID = twitch.getCurrentChannel().id
 
         /*
         <div>
