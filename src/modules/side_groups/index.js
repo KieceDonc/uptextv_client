@@ -6,7 +6,6 @@ const groupSection = require('./groupSection')
 const pinButtonFollow = require('./pinButtonFollow');
 const pinButtonSideNav = require('./pinButtonSideNav')
 const sideBottomBar = require('./sideBottomBar');
-
 const defaultLiveColor = '#007aa3'
 
 var groupsSection = new Array()
@@ -31,8 +30,8 @@ class SideGroupsModule{
           watcher.on('load.sidenav',()=>{
             groups.forEach((currentGroup)=>{
               setupGroupSection(currentGroup,this)
-              sideBottomBar.setup(this)
             })
+            sideBottomBar.setup(this)
             checkSettingsMenuCollision()
             pinButtonSideNav.setup(this)
             handleUpdateEach5min(this)
@@ -43,8 +42,8 @@ class SideGroupsModule{
       })
 
       watcher.on('load.followbar',()=>{
-        pinButtonFollow.setup(this)  
-      }) 
+        pinButtonFollow.setup(this)
+      })
     }
 
     getUserID(){
@@ -137,6 +136,47 @@ class SideGroupsModule{
       groupsSection = newGroupsSection
     }
 }
+
+/**
+ * Handle onBroadcastUpdate with 1 s of cooldown 
+ * ( you need a cooldown cuz of groupsIndex for example )
+ */
+let isInCooldown= false
+let groupsToUpdate = null
+uptextvAPI.onBroadcastGroupsUpdate((receiveGroups)=>{
+
+  updateGroups = (groups)=>{
+    groupsSection.forEach((currentGroupSection)=>{
+      currentGroupSection.HTMLRemove()
+    })
+  
+    groupsSection = new Array()
+  
+    groups.sort((groupA,groupB)=>{
+      return groupB.groupIndex - groupA.groupIndex
+    })
+    groups.forEach((currentGroup)=>{
+      setupGroupSection(currentGroup,this)
+    })
+  
+    checkSettingsMenuCollision()
+    pinButtonSideNav.setup(this)
+  }
+
+  if(!isInCooldown){
+    isInCooldown = true
+    updateGroups(receiveGroups)
+    setTimeout(()=>{
+      if(groupsToUpdate!=null){
+        updateGroups(groupsToUpdate)
+        groupsToUpdate=null
+      }
+    },1000)
+    isInCooldown=false 
+  }else{
+    groupsToUpdate=receiveGroups
+  }
+})
 
 // setup for one group setup a side nav group section
 function setupGroupSection(currentGroup,sideGroupsModule){

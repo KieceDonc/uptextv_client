@@ -10,7 +10,6 @@ watcher.on('load.followbar',()=>{
   button = getFollowButton()
   
   isFollowing = (button!=null)
-  console.log(isFollowing)
 
   if(!isFollowing){
     button = getUnfollowButton()

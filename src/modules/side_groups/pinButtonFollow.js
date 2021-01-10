@@ -13,10 +13,6 @@ class pinButton{
         checkSetup()
         setup()
     }
-
-    selfRemove(){
-        removePinButton()
-    }
 }
 
 // check if pin button already exist in page
@@ -135,7 +131,7 @@ function setup(){
         figure0.appendChild(img0)
         div8.appendChild(span0)
     }
-    if(!follow.isFollowing()){
+    /*if(!follow.isFollowing()){
         document.getElementById('pin-button').style.display="none"
     }
     follow.onFollow(()=>{
@@ -144,7 +140,7 @@ function setup(){
 
     follow.onUnfollow(()=>{
         document.getElementById('pin-button').style.display="none"
-    })
+    })*/
 }
 
 // title of function prelly clear

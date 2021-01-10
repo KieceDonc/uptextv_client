@@ -29,6 +29,17 @@ class groupSection{
         }
     }  
 
+    HTMLRemove(){
+        let groupSection = document.getElementById(this.getGroupID()+"_sideNavGroupSection")
+        let groupSectionTitle = document.getElementById(this.getGroupID()+"_title")
+        if(groupSection!=null){
+            groupSection.remove()
+        }
+        if(groupSectionTitle!=null){
+            groupSection.remove()
+        }
+    }
+
     checkSettingsMenuCollision(){
         handleSettingsMenuCollision(this.getSideGroupsModule())
     }
@@ -342,7 +353,8 @@ class streamTitleToolTipHandler{
 
         let div3 = document.createElement('div')
         div3.className=''
-        div3.style.transform='translate('+(aWidth+2)+'px,'+(aRectTop)+'px)'
+        // you must do 0.2*width cuz of pinbutton slide feature which require 20 %
+        div3.style.transform='translate('+(aWidth+5+0.2*aWidth)+'px,'+(aRectTop)+'px)'
         div3.style.position = 'absolute'
         
         let div4 = document.createElement('div')
@@ -709,7 +721,8 @@ function onBackArrowReorderMenuButtonClick(divReorderMenu,divSettingsMenu){
     divReorderMenu.style.transform='scale(0)'
     setTimeout(function(){
         divReorderMenu.style.display='none'
-        divSettingsMenu.style.display=''
+        divSettingsMenu.style.display='flex'
+        divSettingsMenu.style.alignItems='center'
         divSettingsMenu.style.transform='scale(1)'
     },250)
 }

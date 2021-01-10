@@ -154,16 +154,8 @@ Backoff.prototype.setJitter = function(jitter){
  * Copyright (c) 2012 Niklas von Hertzen
  * Licensed under the MIT license.
  */
-(function(){
+(function(chars){
   "use strict";
-
-  var chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-
-  // Use a lookup table to find the index.
-  var lookup = new Uint8Array(256);
-  for (var i = 0; i < chars.length; i++) {
-    lookup[chars.charCodeAt(i)] = i;
-  }
 
   exports.encode = function(arraybuffer) {
     var bytes = new Uint8Array(arraybuffer),
@@ -201,10 +193,10 @@ Backoff.prototype.setJitter = function(jitter){
     bytes = new Uint8Array(arraybuffer);
 
     for (i = 0; i < len; i+=4) {
-      encoded1 = lookup[base64.charCodeAt(i)];
-      encoded2 = lookup[base64.charCodeAt(i+1)];
-      encoded3 = lookup[base64.charCodeAt(i+2)];
-      encoded4 = lookup[base64.charCodeAt(i+3)];
+      encoded1 = chars.indexOf(base64[i]);
+      encoded2 = chars.indexOf(base64[i+1]);
+      encoded3 = chars.indexOf(base64[i+2]);
+      encoded4 = chars.indexOf(base64[i+3]);
 
       bytes[p++] = (encoded1 << 2) | (encoded2 >> 4);
       bytes[p++] = ((encoded2 & 15) << 4) | (encoded3 >> 2);
@@ -213,7 +205,7 @@ Backoff.prototype.setJitter = function(jitter){
 
     return arraybuffer;
   };
-})();
+})("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/");
 
 },{}],5:[function(require,module,exports){
 'use strict'
@@ -2254,7 +2246,7 @@ function numberIsNaN (obj) {
 }
 
 }).call(this)}).call(this,require("buffer").Buffer)
-},{"base64-js":5,"buffer":8,"ieee754":32}],9:[function(require,module,exports){
+},{"base64-js":5,"buffer":8,"ieee754":33}],9:[function(require,module,exports){
 /**
  * Slice reference.
  */
@@ -2638,542 +2630,6 @@ module.exports = function(a, b){
     }
 })(typeof window === 'undefined' ? this : window);
 },{}],13:[function(require,module,exports){
-(function (process){(function (){
-/* eslint-env browser */
-
-/**
- * This is the web browser implementation of `debug()`.
- */
-
-exports.log = log;
-exports.formatArgs = formatArgs;
-exports.save = save;
-exports.load = load;
-exports.useColors = useColors;
-exports.storage = localstorage();
-
-/**
- * Colors.
- */
-
-exports.colors = [
-	'#0000CC',
-	'#0000FF',
-	'#0033CC',
-	'#0033FF',
-	'#0066CC',
-	'#0066FF',
-	'#0099CC',
-	'#0099FF',
-	'#00CC00',
-	'#00CC33',
-	'#00CC66',
-	'#00CC99',
-	'#00CCCC',
-	'#00CCFF',
-	'#3300CC',
-	'#3300FF',
-	'#3333CC',
-	'#3333FF',
-	'#3366CC',
-	'#3366FF',
-	'#3399CC',
-	'#3399FF',
-	'#33CC00',
-	'#33CC33',
-	'#33CC66',
-	'#33CC99',
-	'#33CCCC',
-	'#33CCFF',
-	'#6600CC',
-	'#6600FF',
-	'#6633CC',
-	'#6633FF',
-	'#66CC00',
-	'#66CC33',
-	'#9900CC',
-	'#9900FF',
-	'#9933CC',
-	'#9933FF',
-	'#99CC00',
-	'#99CC33',
-	'#CC0000',
-	'#CC0033',
-	'#CC0066',
-	'#CC0099',
-	'#CC00CC',
-	'#CC00FF',
-	'#CC3300',
-	'#CC3333',
-	'#CC3366',
-	'#CC3399',
-	'#CC33CC',
-	'#CC33FF',
-	'#CC6600',
-	'#CC6633',
-	'#CC9900',
-	'#CC9933',
-	'#CCCC00',
-	'#CCCC33',
-	'#FF0000',
-	'#FF0033',
-	'#FF0066',
-	'#FF0099',
-	'#FF00CC',
-	'#FF00FF',
-	'#FF3300',
-	'#FF3333',
-	'#FF3366',
-	'#FF3399',
-	'#FF33CC',
-	'#FF33FF',
-	'#FF6600',
-	'#FF6633',
-	'#FF9900',
-	'#FF9933',
-	'#FFCC00',
-	'#FFCC33'
-];
-
-/**
- * Currently only WebKit-based Web Inspectors, Firefox >= v31,
- * and the Firebug extension (any Firefox version) are known
- * to support "%c" CSS customizations.
- *
- * TODO: add a `localStorage` variable to explicitly enable/disable colors
- */
-
-// eslint-disable-next-line complexity
-function useColors() {
-	// NB: In an Electron preload script, document will be defined but not fully
-	// initialized. Since we know we're in Chrome, we'll just detect this case
-	// explicitly
-	if (typeof window !== 'undefined' && window.process && (window.process.type === 'renderer' || window.process.__nwjs)) {
-		return true;
-	}
-
-	// Internet Explorer and Edge do not support colors.
-	if (typeof navigator !== 'undefined' && navigator.userAgent && navigator.userAgent.toLowerCase().match(/(edge|trident)\/(\d+)/)) {
-		return false;
-	}
-
-	// Is webkit? http://stackoverflow.com/a/16459606/376773
-	// document is undefined in react-native: https://github.com/facebook/react-native/pull/1632
-	return (typeof document !== 'undefined' && document.documentElement && document.documentElement.style && document.documentElement.style.WebkitAppearance) ||
-		// Is firebug? http://stackoverflow.com/a/398120/376773
-		(typeof window !== 'undefined' && window.console && (window.console.firebug || (window.console.exception && window.console.table))) ||
-		// Is firefox >= v31?
-		// https://developer.mozilla.org/en-US/docs/Tools/Web_Console#Styling_messages
-		(typeof navigator !== 'undefined' && navigator.userAgent && navigator.userAgent.toLowerCase().match(/firefox\/(\d+)/) && parseInt(RegExp.$1, 10) >= 31) ||
-		// Double check webkit in userAgent just in case we are in a worker
-		(typeof navigator !== 'undefined' && navigator.userAgent && navigator.userAgent.toLowerCase().match(/applewebkit\/(\d+)/));
-}
-
-/**
- * Colorize log arguments if enabled.
- *
- * @api public
- */
-
-function formatArgs(args) {
-	args[0] = (this.useColors ? '%c' : '') +
-		this.namespace +
-		(this.useColors ? ' %c' : ' ') +
-		args[0] +
-		(this.useColors ? '%c ' : ' ') +
-		'+' + module.exports.humanize(this.diff);
-
-	if (!this.useColors) {
-		return;
-	}
-
-	const c = 'color: ' + this.color;
-	args.splice(1, 0, c, 'color: inherit');
-
-	// The final "%c" is somewhat tricky, because there could be other
-	// arguments passed either before or after the %c, so we need to
-	// figure out the correct index to insert the CSS into
-	let index = 0;
-	let lastC = 0;
-	args[0].replace(/%[a-zA-Z%]/g, match => {
-		if (match === '%%') {
-			return;
-		}
-		index++;
-		if (match === '%c') {
-			// We only are interested in the *last* %c
-			// (the user may have provided their own)
-			lastC = index;
-		}
-	});
-
-	args.splice(lastC, 0, c);
-}
-
-/**
- * Invokes `console.log()` when available.
- * No-op when `console.log` is not a "function".
- *
- * @api public
- */
-function log(...args) {
-	// This hackery is required for IE8/9, where
-	// the `console.log` function doesn't have 'apply'
-	return typeof console === 'object' &&
-		console.log &&
-		console.log(...args);
-}
-
-/**
- * Save `namespaces`.
- *
- * @param {String} namespaces
- * @api private
- */
-function save(namespaces) {
-	try {
-		if (namespaces) {
-			exports.storage.setItem('debug', namespaces);
-		} else {
-			exports.storage.removeItem('debug');
-		}
-	} catch (error) {
-		// Swallow
-		// XXX (@Qix-) should we be logging these?
-	}
-}
-
-/**
- * Load `namespaces`.
- *
- * @return {String} returns the previously persisted debug modes
- * @api private
- */
-function load() {
-	let r;
-	try {
-		r = exports.storage.getItem('debug');
-	} catch (error) {
-		// Swallow
-		// XXX (@Qix-) should we be logging these?
-	}
-
-	// If debug isn't set in LS, and we're in Electron, try to load $DEBUG
-	if (!r && typeof process !== 'undefined' && 'env' in process) {
-		r = process.env.DEBUG;
-	}
-
-	return r;
-}
-
-/**
- * Localstorage attempts to return the localstorage.
- *
- * This is necessary because safari throws
- * when a user disables cookies/localstorage
- * and you attempt to access it.
- *
- * @return {LocalStorage}
- * @api private
- */
-
-function localstorage() {
-	try {
-		// TVMLKit (Apple TV JS Runtime) does not have a window object, just localStorage in the global context
-		// The Browser also has localStorage in the global context.
-		return localStorage;
-	} catch (error) {
-		// Swallow
-		// XXX (@Qix-) should we be logging these?
-	}
-}
-
-module.exports = require('./common')(exports);
-
-const {formatters} = module.exports;
-
-/**
- * Map %j to `JSON.stringify()`, since no Web Inspectors do that by default.
- */
-
-formatters.j = function (v) {
-	try {
-		return JSON.stringify(v);
-	} catch (error) {
-		return '[UnexpectedJSONParseError]: ' + error.message;
-	}
-};
-
-}).call(this)}).call(this,require('_process'))
-},{"./common":14,"_process":38}],14:[function(require,module,exports){
-
-/**
- * This is the common logic for both the Node.js and web browser
- * implementations of `debug()`.
- */
-
-function setup(env) {
-	createDebug.debug = createDebug;
-	createDebug.default = createDebug;
-	createDebug.coerce = coerce;
-	createDebug.disable = disable;
-	createDebug.enable = enable;
-	createDebug.enabled = enabled;
-	createDebug.humanize = require('ms');
-
-	Object.keys(env).forEach(key => {
-		createDebug[key] = env[key];
-	});
-
-	/**
-	* Active `debug` instances.
-	*/
-	createDebug.instances = [];
-
-	/**
-	* The currently active debug mode names, and names to skip.
-	*/
-
-	createDebug.names = [];
-	createDebug.skips = [];
-
-	/**
-	* Map of special "%n" handling functions, for the debug "format" argument.
-	*
-	* Valid key names are a single, lower or upper-case letter, i.e. "n" and "N".
-	*/
-	createDebug.formatters = {};
-
-	/**
-	* Selects a color for a debug namespace
-	* @param {String} namespace The namespace string for the for the debug instance to be colored
-	* @return {Number|String} An ANSI color code for the given namespace
-	* @api private
-	*/
-	function selectColor(namespace) {
-		let hash = 0;
-
-		for (let i = 0; i < namespace.length; i++) {
-			hash = ((hash << 5) - hash) + namespace.charCodeAt(i);
-			hash |= 0; // Convert to 32bit integer
-		}
-
-		return createDebug.colors[Math.abs(hash) % createDebug.colors.length];
-	}
-	createDebug.selectColor = selectColor;
-
-	/**
-	* Create a debugger with the given `namespace`.
-	*
-	* @param {String} namespace
-	* @return {Function}
-	* @api public
-	*/
-	function createDebug(namespace) {
-		let prevTime;
-
-		function debug(...args) {
-			// Disabled?
-			if (!debug.enabled) {
-				return;
-			}
-
-			const self = debug;
-
-			// Set `diff` timestamp
-			const curr = Number(new Date());
-			const ms = curr - (prevTime || curr);
-			self.diff = ms;
-			self.prev = prevTime;
-			self.curr = curr;
-			prevTime = curr;
-
-			args[0] = createDebug.coerce(args[0]);
-
-			if (typeof args[0] !== 'string') {
-				// Anything else let's inspect with %O
-				args.unshift('%O');
-			}
-
-			// Apply any `formatters` transformations
-			let index = 0;
-			args[0] = args[0].replace(/%([a-zA-Z%])/g, (match, format) => {
-				// If we encounter an escaped % then don't increase the array index
-				if (match === '%%') {
-					return match;
-				}
-				index++;
-				const formatter = createDebug.formatters[format];
-				if (typeof formatter === 'function') {
-					const val = args[index];
-					match = formatter.call(self, val);
-
-					// Now we need to remove `args[index]` since it's inlined in the `format`
-					args.splice(index, 1);
-					index--;
-				}
-				return match;
-			});
-
-			// Apply env-specific formatting (colors, etc.)
-			createDebug.formatArgs.call(self, args);
-
-			const logFn = self.log || createDebug.log;
-			logFn.apply(self, args);
-		}
-
-		debug.namespace = namespace;
-		debug.enabled = createDebug.enabled(namespace);
-		debug.useColors = createDebug.useColors();
-		debug.color = selectColor(namespace);
-		debug.destroy = destroy;
-		debug.extend = extend;
-		// Debug.formatArgs = formatArgs;
-		// debug.rawLog = rawLog;
-
-		// env-specific initialization logic for debug instances
-		if (typeof createDebug.init === 'function') {
-			createDebug.init(debug);
-		}
-
-		createDebug.instances.push(debug);
-
-		return debug;
-	}
-
-	function destroy() {
-		const index = createDebug.instances.indexOf(this);
-		if (index !== -1) {
-			createDebug.instances.splice(index, 1);
-			return true;
-		}
-		return false;
-	}
-
-	function extend(namespace, delimiter) {
-		const newDebug = createDebug(this.namespace + (typeof delimiter === 'undefined' ? ':' : delimiter) + namespace);
-		newDebug.log = this.log;
-		return newDebug;
-	}
-
-	/**
-	* Enables a debug mode by namespaces. This can include modes
-	* separated by a colon and wildcards.
-	*
-	* @param {String} namespaces
-	* @api public
-	*/
-	function enable(namespaces) {
-		createDebug.save(namespaces);
-
-		createDebug.names = [];
-		createDebug.skips = [];
-
-		let i;
-		const split = (typeof namespaces === 'string' ? namespaces : '').split(/[\s,]+/);
-		const len = split.length;
-
-		for (i = 0; i < len; i++) {
-			if (!split[i]) {
-				// ignore empty strings
-				continue;
-			}
-
-			namespaces = split[i].replace(/\*/g, '.*?');
-
-			if (namespaces[0] === '-') {
-				createDebug.skips.push(new RegExp('^' + namespaces.substr(1) + '$'));
-			} else {
-				createDebug.names.push(new RegExp('^' + namespaces + '$'));
-			}
-		}
-
-		for (i = 0; i < createDebug.instances.length; i++) {
-			const instance = createDebug.instances[i];
-			instance.enabled = createDebug.enabled(instance.namespace);
-		}
-	}
-
-	/**
-	* Disable debug output.
-	*
-	* @return {String} namespaces
-	* @api public
-	*/
-	function disable() {
-		const namespaces = [
-			...createDebug.names.map(toNamespace),
-			...createDebug.skips.map(toNamespace).map(namespace => '-' + namespace)
-		].join(',');
-		createDebug.enable('');
-		return namespaces;
-	}
-
-	/**
-	* Returns true if the given mode name is enabled, false otherwise.
-	*
-	* @param {String} name
-	* @return {Boolean}
-	* @api public
-	*/
-	function enabled(name) {
-		if (name[name.length - 1] === '*') {
-			return true;
-		}
-
-		let i;
-		let len;
-
-		for (i = 0, len = createDebug.skips.length; i < len; i++) {
-			if (createDebug.skips[i].test(name)) {
-				return false;
-			}
-		}
-
-		for (i = 0, len = createDebug.names.length; i < len; i++) {
-			if (createDebug.names[i].test(name)) {
-				return true;
-			}
-		}
-
-		return false;
-	}
-
-	/**
-	* Convert regexp to namespace
-	*
-	* @param {RegExp} regxep
-	* @return {String} namespace
-	* @api private
-	*/
-	function toNamespace(regexp) {
-		return regexp.toString()
-			.substring(2, regexp.toString().length - 2)
-			.replace(/\.\*\?$/, '*');
-	}
-
-	/**
-	* Coerce `val`.
-	*
-	* @param {Mixed} val
-	* @return {Mixed}
-	* @api private
-	*/
-	function coerce(val) {
-		if (val instanceof Error) {
-			return val.stack || val.message;
-		}
-		return val;
-	}
-
-	createDebug.enable(createDebug.load());
-
-	return createDebug;
-}
-
-module.exports = setup;
-
-},{"ms":35}],15:[function(require,module,exports){
 module.exports = (function () {
   if (typeof self !== 'undefined') {
     return self;
@@ -3184,7 +2640,7 @@ module.exports = (function () {
   }
 })();
 
-},{}],16:[function(require,module,exports){
+},{}],14:[function(require,module,exports){
 
 module.exports = require('./socket');
 
@@ -3196,7 +2652,7 @@ module.exports = require('./socket');
  */
 module.exports.parser = require('engine.io-parser');
 
-},{"./socket":17,"engine.io-parser":25}],17:[function(require,module,exports){
+},{"./socket":15,"engine.io-parser":26}],15:[function(require,module,exports){
 /**
  * Module dependencies.
  */
@@ -3946,7 +3402,7 @@ Socket.prototype.filterUpgrades = function (upgrades) {
   return filteredUpgrades;
 };
 
-},{"./transport":18,"./transports/index":19,"component-emitter":10,"debug":13,"engine.io-parser":25,"indexof":33,"parseqs":36,"parseuri":37}],18:[function(require,module,exports){
+},{"./transport":16,"./transports/index":17,"component-emitter":10,"debug":23,"engine.io-parser":26,"indexof":34,"parseqs":36,"parseuri":37}],16:[function(require,module,exports){
 /**
  * Module dependencies.
  */
@@ -4109,7 +3565,7 @@ Transport.prototype.onClose = function () {
   this.emit('close');
 };
 
-},{"component-emitter":10,"engine.io-parser":25}],19:[function(require,module,exports){
+},{"component-emitter":10,"engine.io-parser":26}],17:[function(require,module,exports){
 /**
  * Module dependencies
  */
@@ -4164,7 +3620,7 @@ function polling (opts) {
   }
 }
 
-},{"./polling-jsonp":20,"./polling-xhr":21,"./websocket":23,"xmlhttprequest-ssl":24}],20:[function(require,module,exports){
+},{"./polling-jsonp":18,"./polling-xhr":19,"./websocket":21,"xmlhttprequest-ssl":22}],18:[function(require,module,exports){
 /**
  * Module requirements.
  */
@@ -4396,7 +3852,7 @@ JSONPPolling.prototype.doWrite = function (data, fn) {
   }
 };
 
-},{"../globalThis":15,"./polling":22,"component-inherit":11}],21:[function(require,module,exports){
+},{"../globalThis":13,"./polling":20,"component-inherit":11}],19:[function(require,module,exports){
 /* global attachEvent */
 
 /**
@@ -4816,7 +4272,7 @@ function unloadHandler () {
   }
 }
 
-},{"../globalThis":15,"./polling":22,"component-emitter":10,"component-inherit":11,"debug":13,"xmlhttprequest-ssl":24}],22:[function(require,module,exports){
+},{"../globalThis":13,"./polling":20,"component-emitter":10,"component-inherit":11,"debug":23,"xmlhttprequest-ssl":22}],20:[function(require,module,exports){
 /**
  * Module dependencies.
  */
@@ -4949,7 +4405,7 @@ Polling.prototype.onData = function (data) {
   debug('polling got data %s', data);
   var callback = function (packet, index, total) {
     // if its the first message we consider the transport open
-    if ('opening' === self.readyState) {
+    if ('opening' === self.readyState && packet.type === 'open') {
       self.onOpen();
     }
 
@@ -5063,7 +4519,7 @@ Polling.prototype.uri = function () {
   return schema + '://' + (ipv6 ? '[' + this.hostname + ']' : this.hostname) + port + this.path + query;
 };
 
-},{"../transport":18,"component-inherit":11,"debug":13,"engine.io-parser":25,"parseqs":36,"xmlhttprequest-ssl":24,"yeast":56}],23:[function(require,module,exports){
+},{"../transport":16,"component-inherit":11,"debug":23,"engine.io-parser":26,"parseqs":36,"xmlhttprequest-ssl":22,"yeast":55}],21:[function(require,module,exports){
 (function (Buffer){(function (){
 /**
  * Module dependencies.
@@ -5366,7 +4822,7 @@ WS.prototype.check = function () {
 };
 
 }).call(this)}).call(this,require("buffer").Buffer)
-},{"../transport":18,"buffer":8,"component-inherit":11,"debug":13,"engine.io-parser":25,"parseqs":36,"ws":7,"yeast":56}],24:[function(require,module,exports){
+},{"../transport":16,"buffer":8,"component-inherit":11,"debug":23,"engine.io-parser":26,"parseqs":36,"ws":7,"yeast":55}],22:[function(require,module,exports){
 // browser shim for xmlhttprequest module
 
 var hasCORS = require('has-cors');
@@ -5406,7 +4862,587 @@ module.exports = function (opts) {
   }
 };
 
-},{"./globalThis":15,"has-cors":31}],25:[function(require,module,exports){
+},{"./globalThis":13,"has-cors":32}],23:[function(require,module,exports){
+(function (process){(function (){
+/**
+ * This is the web browser implementation of `debug()`.
+ *
+ * Expose `debug()` as the module.
+ */
+
+exports = module.exports = require('./debug');
+exports.log = log;
+exports.formatArgs = formatArgs;
+exports.save = save;
+exports.load = load;
+exports.useColors = useColors;
+exports.storage = 'undefined' != typeof chrome
+               && 'undefined' != typeof chrome.storage
+                  ? chrome.storage.local
+                  : localstorage();
+
+/**
+ * Colors.
+ */
+
+exports.colors = [
+  '#0000CC', '#0000FF', '#0033CC', '#0033FF', '#0066CC', '#0066FF', '#0099CC',
+  '#0099FF', '#00CC00', '#00CC33', '#00CC66', '#00CC99', '#00CCCC', '#00CCFF',
+  '#3300CC', '#3300FF', '#3333CC', '#3333FF', '#3366CC', '#3366FF', '#3399CC',
+  '#3399FF', '#33CC00', '#33CC33', '#33CC66', '#33CC99', '#33CCCC', '#33CCFF',
+  '#6600CC', '#6600FF', '#6633CC', '#6633FF', '#66CC00', '#66CC33', '#9900CC',
+  '#9900FF', '#9933CC', '#9933FF', '#99CC00', '#99CC33', '#CC0000', '#CC0033',
+  '#CC0066', '#CC0099', '#CC00CC', '#CC00FF', '#CC3300', '#CC3333', '#CC3366',
+  '#CC3399', '#CC33CC', '#CC33FF', '#CC6600', '#CC6633', '#CC9900', '#CC9933',
+  '#CCCC00', '#CCCC33', '#FF0000', '#FF0033', '#FF0066', '#FF0099', '#FF00CC',
+  '#FF00FF', '#FF3300', '#FF3333', '#FF3366', '#FF3399', '#FF33CC', '#FF33FF',
+  '#FF6600', '#FF6633', '#FF9900', '#FF9933', '#FFCC00', '#FFCC33'
+];
+
+/**
+ * Currently only WebKit-based Web Inspectors, Firefox >= v31,
+ * and the Firebug extension (any Firefox version) are known
+ * to support "%c" CSS customizations.
+ *
+ * TODO: add a `localStorage` variable to explicitly enable/disable colors
+ */
+
+function useColors() {
+  // NB: In an Electron preload script, document will be defined but not fully
+  // initialized. Since we know we're in Chrome, we'll just detect this case
+  // explicitly
+  if (typeof window !== 'undefined' && window.process && window.process.type === 'renderer') {
+    return true;
+  }
+
+  // Internet Explorer and Edge do not support colors.
+  if (typeof navigator !== 'undefined' && navigator.userAgent && navigator.userAgent.toLowerCase().match(/(edge|trident)\/(\d+)/)) {
+    return false;
+  }
+
+  // is webkit? http://stackoverflow.com/a/16459606/376773
+  // document is undefined in react-native: https://github.com/facebook/react-native/pull/1632
+  return (typeof document !== 'undefined' && document.documentElement && document.documentElement.style && document.documentElement.style.WebkitAppearance) ||
+    // is firebug? http://stackoverflow.com/a/398120/376773
+    (typeof window !== 'undefined' && window.console && (window.console.firebug || (window.console.exception && window.console.table))) ||
+    // is firefox >= v31?
+    // https://developer.mozilla.org/en-US/docs/Tools/Web_Console#Styling_messages
+    (typeof navigator !== 'undefined' && navigator.userAgent && navigator.userAgent.toLowerCase().match(/firefox\/(\d+)/) && parseInt(RegExp.$1, 10) >= 31) ||
+    // double check webkit in userAgent just in case we are in a worker
+    (typeof navigator !== 'undefined' && navigator.userAgent && navigator.userAgent.toLowerCase().match(/applewebkit\/(\d+)/));
+}
+
+/**
+ * Map %j to `JSON.stringify()`, since no Web Inspectors do that by default.
+ */
+
+exports.formatters.j = function(v) {
+  try {
+    return JSON.stringify(v);
+  } catch (err) {
+    return '[UnexpectedJSONParseError]: ' + err.message;
+  }
+};
+
+
+/**
+ * Colorize log arguments if enabled.
+ *
+ * @api public
+ */
+
+function formatArgs(args) {
+  var useColors = this.useColors;
+
+  args[0] = (useColors ? '%c' : '')
+    + this.namespace
+    + (useColors ? ' %c' : ' ')
+    + args[0]
+    + (useColors ? '%c ' : ' ')
+    + '+' + exports.humanize(this.diff);
+
+  if (!useColors) return;
+
+  var c = 'color: ' + this.color;
+  args.splice(1, 0, c, 'color: inherit')
+
+  // the final "%c" is somewhat tricky, because there could be other
+  // arguments passed either before or after the %c, so we need to
+  // figure out the correct index to insert the CSS into
+  var index = 0;
+  var lastC = 0;
+  args[0].replace(/%[a-zA-Z%]/g, function(match) {
+    if ('%%' === match) return;
+    index++;
+    if ('%c' === match) {
+      // we only are interested in the *last* %c
+      // (the user may have provided their own)
+      lastC = index;
+    }
+  });
+
+  args.splice(lastC, 0, c);
+}
+
+/**
+ * Invokes `console.log()` when available.
+ * No-op when `console.log` is not a "function".
+ *
+ * @api public
+ */
+
+function log() {
+  // this hackery is required for IE8/9, where
+  // the `console.log` function doesn't have 'apply'
+  return 'object' === typeof console
+    && console.log
+    && Function.prototype.apply.call(console.log, console, arguments);
+}
+
+/**
+ * Save `namespaces`.
+ *
+ * @param {String} namespaces
+ * @api private
+ */
+
+function save(namespaces) {
+  try {
+    if (null == namespaces) {
+      exports.storage.removeItem('debug');
+    } else {
+      exports.storage.debug = namespaces;
+    }
+  } catch(e) {}
+}
+
+/**
+ * Load `namespaces`.
+ *
+ * @return {String} returns the previously persisted debug modes
+ * @api private
+ */
+
+function load() {
+  var r;
+  try {
+    r = exports.storage.debug;
+  } catch(e) {}
+
+  // If debug isn't set in LS, and we're in Electron, try to load $DEBUG
+  if (!r && typeof process !== 'undefined' && 'env' in process) {
+    r = process.env.DEBUG;
+  }
+
+  return r;
+}
+
+/**
+ * Enable namespaces listed in `localStorage.debug` initially.
+ */
+
+exports.enable(load());
+
+/**
+ * Localstorage attempts to return the localstorage.
+ *
+ * This is necessary because safari throws
+ * when a user disables cookies/localstorage
+ * and you attempt to access it.
+ *
+ * @return {LocalStorage}
+ * @api private
+ */
+
+function localstorage() {
+  try {
+    return window.localStorage;
+  } catch (e) {}
+}
+
+}).call(this)}).call(this,require('_process'))
+},{"./debug":24,"_process":38}],24:[function(require,module,exports){
+
+/**
+ * This is the common logic for both the Node.js and web browser
+ * implementations of `debug()`.
+ *
+ * Expose `debug()` as the module.
+ */
+
+exports = module.exports = createDebug.debug = createDebug['default'] = createDebug;
+exports.coerce = coerce;
+exports.disable = disable;
+exports.enable = enable;
+exports.enabled = enabled;
+exports.humanize = require('ms');
+
+/**
+ * Active `debug` instances.
+ */
+exports.instances = [];
+
+/**
+ * The currently active debug mode names, and names to skip.
+ */
+
+exports.names = [];
+exports.skips = [];
+
+/**
+ * Map of special "%n" handling functions, for the debug "format" argument.
+ *
+ * Valid key names are a single, lower or upper-case letter, i.e. "n" and "N".
+ */
+
+exports.formatters = {};
+
+/**
+ * Select a color.
+ * @param {String} namespace
+ * @return {Number}
+ * @api private
+ */
+
+function selectColor(namespace) {
+  var hash = 0, i;
+
+  for (i in namespace) {
+    hash  = ((hash << 5) - hash) + namespace.charCodeAt(i);
+    hash |= 0; // Convert to 32bit integer
+  }
+
+  return exports.colors[Math.abs(hash) % exports.colors.length];
+}
+
+/**
+ * Create a debugger with the given `namespace`.
+ *
+ * @param {String} namespace
+ * @return {Function}
+ * @api public
+ */
+
+function createDebug(namespace) {
+
+  var prevTime;
+
+  function debug() {
+    // disabled?
+    if (!debug.enabled) return;
+
+    var self = debug;
+
+    // set `diff` timestamp
+    var curr = +new Date();
+    var ms = curr - (prevTime || curr);
+    self.diff = ms;
+    self.prev = prevTime;
+    self.curr = curr;
+    prevTime = curr;
+
+    // turn the `arguments` into a proper Array
+    var args = new Array(arguments.length);
+    for (var i = 0; i < args.length; i++) {
+      args[i] = arguments[i];
+    }
+
+    args[0] = exports.coerce(args[0]);
+
+    if ('string' !== typeof args[0]) {
+      // anything else let's inspect with %O
+      args.unshift('%O');
+    }
+
+    // apply any `formatters` transformations
+    var index = 0;
+    args[0] = args[0].replace(/%([a-zA-Z%])/g, function(match, format) {
+      // if we encounter an escaped % then don't increase the array index
+      if (match === '%%') return match;
+      index++;
+      var formatter = exports.formatters[format];
+      if ('function' === typeof formatter) {
+        var val = args[index];
+        match = formatter.call(self, val);
+
+        // now we need to remove `args[index]` since it's inlined in the `format`
+        args.splice(index, 1);
+        index--;
+      }
+      return match;
+    });
+
+    // apply env-specific formatting (colors, etc.)
+    exports.formatArgs.call(self, args);
+
+    var logFn = debug.log || exports.log || console.log.bind(console);
+    logFn.apply(self, args);
+  }
+
+  debug.namespace = namespace;
+  debug.enabled = exports.enabled(namespace);
+  debug.useColors = exports.useColors();
+  debug.color = selectColor(namespace);
+  debug.destroy = destroy;
+
+  // env-specific initialization logic for debug instances
+  if ('function' === typeof exports.init) {
+    exports.init(debug);
+  }
+
+  exports.instances.push(debug);
+
+  return debug;
+}
+
+function destroy () {
+  var index = exports.instances.indexOf(this);
+  if (index !== -1) {
+    exports.instances.splice(index, 1);
+    return true;
+  } else {
+    return false;
+  }
+}
+
+/**
+ * Enables a debug mode by namespaces. This can include modes
+ * separated by a colon and wildcards.
+ *
+ * @param {String} namespaces
+ * @api public
+ */
+
+function enable(namespaces) {
+  exports.save(namespaces);
+
+  exports.names = [];
+  exports.skips = [];
+
+  var i;
+  var split = (typeof namespaces === 'string' ? namespaces : '').split(/[\s,]+/);
+  var len = split.length;
+
+  for (i = 0; i < len; i++) {
+    if (!split[i]) continue; // ignore empty strings
+    namespaces = split[i].replace(/\*/g, '.*?');
+    if (namespaces[0] === '-') {
+      exports.skips.push(new RegExp('^' + namespaces.substr(1) + '$'));
+    } else {
+      exports.names.push(new RegExp('^' + namespaces + '$'));
+    }
+  }
+
+  for (i = 0; i < exports.instances.length; i++) {
+    var instance = exports.instances[i];
+    instance.enabled = exports.enabled(instance.namespace);
+  }
+}
+
+/**
+ * Disable debug output.
+ *
+ * @api public
+ */
+
+function disable() {
+  exports.enable('');
+}
+
+/**
+ * Returns true if the given mode name is enabled, false otherwise.
+ *
+ * @param {String} name
+ * @return {Boolean}
+ * @api public
+ */
+
+function enabled(name) {
+  if (name[name.length - 1] === '*') {
+    return true;
+  }
+  var i, len;
+  for (i = 0, len = exports.skips.length; i < len; i++) {
+    if (exports.skips[i].test(name)) {
+      return false;
+    }
+  }
+  for (i = 0, len = exports.names.length; i < len; i++) {
+    if (exports.names[i].test(name)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Coerce `val`.
+ *
+ * @param {Mixed} val
+ * @return {Mixed}
+ * @api private
+ */
+
+function coerce(val) {
+  if (val instanceof Error) return val.stack || val.message;
+  return val;
+}
+
+},{"ms":25}],25:[function(require,module,exports){
+/**
+ * Helpers.
+ */
+
+var s = 1000;
+var m = s * 60;
+var h = m * 60;
+var d = h * 24;
+var y = d * 365.25;
+
+/**
+ * Parse or format the given `val`.
+ *
+ * Options:
+ *
+ *  - `long` verbose formatting [false]
+ *
+ * @param {String|Number} val
+ * @param {Object} [options]
+ * @throws {Error} throw an error if val is not a non-empty string or a number
+ * @return {String|Number}
+ * @api public
+ */
+
+module.exports = function(val, options) {
+  options = options || {};
+  var type = typeof val;
+  if (type === 'string' && val.length > 0) {
+    return parse(val);
+  } else if (type === 'number' && isNaN(val) === false) {
+    return options.long ? fmtLong(val) : fmtShort(val);
+  }
+  throw new Error(
+    'val is not a non-empty string or a valid number. val=' +
+      JSON.stringify(val)
+  );
+};
+
+/**
+ * Parse the given `str` and return milliseconds.
+ *
+ * @param {String} str
+ * @return {Number}
+ * @api private
+ */
+
+function parse(str) {
+  str = String(str);
+  if (str.length > 100) {
+    return;
+  }
+  var match = /^((?:\d+)?\.?\d+) *(milliseconds?|msecs?|ms|seconds?|secs?|s|minutes?|mins?|m|hours?|hrs?|h|days?|d|years?|yrs?|y)?$/i.exec(
+    str
+  );
+  if (!match) {
+    return;
+  }
+  var n = parseFloat(match[1]);
+  var type = (match[2] || 'ms').toLowerCase();
+  switch (type) {
+    case 'years':
+    case 'year':
+    case 'yrs':
+    case 'yr':
+    case 'y':
+      return n * y;
+    case 'days':
+    case 'day':
+    case 'd':
+      return n * d;
+    case 'hours':
+    case 'hour':
+    case 'hrs':
+    case 'hr':
+    case 'h':
+      return n * h;
+    case 'minutes':
+    case 'minute':
+    case 'mins':
+    case 'min':
+    case 'm':
+      return n * m;
+    case 'seconds':
+    case 'second':
+    case 'secs':
+    case 'sec':
+    case 's':
+      return n * s;
+    case 'milliseconds':
+    case 'millisecond':
+    case 'msecs':
+    case 'msec':
+    case 'ms':
+      return n;
+    default:
+      return undefined;
+  }
+}
+
+/**
+ * Short format for `ms`.
+ *
+ * @param {Number} ms
+ * @return {String}
+ * @api private
+ */
+
+function fmtShort(ms) {
+  if (ms >= d) {
+    return Math.round(ms / d) + 'd';
+  }
+  if (ms >= h) {
+    return Math.round(ms / h) + 'h';
+  }
+  if (ms >= m) {
+    return Math.round(ms / m) + 'm';
+  }
+  if (ms >= s) {
+    return Math.round(ms / s) + 's';
+  }
+  return ms + 'ms';
+}
+
+/**
+ * Long format for `ms`.
+ *
+ * @param {Number} ms
+ * @return {String}
+ * @api private
+ */
+
+function fmtLong(ms) {
+  return plural(ms, d, 'day') ||
+    plural(ms, h, 'hour') ||
+    plural(ms, m, 'minute') ||
+    plural(ms, s, 'second') ||
+    ms + ' ms';
+}
+
+/**
+ * Pluralization helper.
+ */
+
+function plural(ms, n, name) {
+  if (ms < n) {
+    return;
+  }
+  if (ms < n * 1.5) {
+    return Math.floor(ms / n) + ' ' + name;
+  }
+  return Math.ceil(ms / n) + ' ' + name + 's';
+}
+
+},{}],26:[function(require,module,exports){
 /**
  * Module dependencies.
  */
@@ -6013,7 +6049,7 @@ exports.decodePayloadAsBinary = function (data, binaryType, callback) {
   });
 };
 
-},{"./keys":26,"./utf8":27,"after":1,"arraybuffer.slice":2,"base64-arraybuffer":4,"blob":6,"has-binary2":29}],26:[function(require,module,exports){
+},{"./keys":27,"./utf8":28,"after":1,"arraybuffer.slice":2,"base64-arraybuffer":4,"blob":6,"has-binary2":30}],27:[function(require,module,exports){
 
 /**
  * Gets the keys for an object.
@@ -6034,7 +6070,7 @@ module.exports = Object.keys || function keys (obj){
   return arr;
 };
 
-},{}],27:[function(require,module,exports){
+},{}],28:[function(require,module,exports){
 /*! https://mths.be/utf8js v2.1.2 by @mathias */
 
 var stringFromCharCode = String.fromCharCode;
@@ -6246,7 +6282,7 @@ module.exports = {
 	decode: utf8decode
 };
 
-},{}],28:[function(require,module,exports){
+},{}],29:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -6724,7 +6760,7 @@ function once(emitter, name) {
   });
 }
 
-},{}],29:[function(require,module,exports){
+},{}],30:[function(require,module,exports){
 (function (Buffer){(function (){
 /* global Blob File */
 
@@ -6792,14 +6828,14 @@ function hasBinary (obj) {
 }
 
 }).call(this)}).call(this,require("buffer").Buffer)
-},{"buffer":8,"isarray":30}],30:[function(require,module,exports){
+},{"buffer":8,"isarray":31}],31:[function(require,module,exports){
 var toString = {}.toString;
 
 module.exports = Array.isArray || function (arr) {
   return toString.call(arr) == '[object Array]';
 };
 
-},{}],31:[function(require,module,exports){
+},{}],32:[function(require,module,exports){
 
 /**
  * Module exports.
@@ -6818,7 +6854,7 @@ try {
   module.exports = false;
 }
 
-},{}],32:[function(require,module,exports){
+},{}],33:[function(require,module,exports){
 exports.read = function (buffer, offset, isLE, mLen, nBytes) {
   var e, m
   var eLen = (nBytes * 8) - mLen - 1
@@ -6904,7 +6940,7 @@ exports.write = function (buffer, value, offset, isLE, mLen, nBytes) {
   buffer[offset + i - d] |= s * 128
 }
 
-},{}],33:[function(require,module,exports){
+},{}],34:[function(require,module,exports){
 
 var indexOf = [].indexOf;
 
@@ -6915,7 +6951,7 @@ module.exports = function(arr, obj){
   }
   return -1;
 };
-},{}],34:[function(require,module,exports){
+},{}],35:[function(require,module,exports){
 /*!
  * jQuery JavaScript Library v3.5.1
  * https://jquery.com/
@@ -17789,170 +17825,6 @@ if ( typeof noGlobal === "undefined" ) {
 return jQuery;
 } );
 
-},{}],35:[function(require,module,exports){
-/**
- * Helpers.
- */
-
-var s = 1000;
-var m = s * 60;
-var h = m * 60;
-var d = h * 24;
-var w = d * 7;
-var y = d * 365.25;
-
-/**
- * Parse or format the given `val`.
- *
- * Options:
- *
- *  - `long` verbose formatting [false]
- *
- * @param {String|Number} val
- * @param {Object} [options]
- * @throws {Error} throw an error if val is not a non-empty string or a number
- * @return {String|Number}
- * @api public
- */
-
-module.exports = function(val, options) {
-  options = options || {};
-  var type = typeof val;
-  if (type === 'string' && val.length > 0) {
-    return parse(val);
-  } else if (type === 'number' && isFinite(val)) {
-    return options.long ? fmtLong(val) : fmtShort(val);
-  }
-  throw new Error(
-    'val is not a non-empty string or a valid number. val=' +
-      JSON.stringify(val)
-  );
-};
-
-/**
- * Parse the given `str` and return milliseconds.
- *
- * @param {String} str
- * @return {Number}
- * @api private
- */
-
-function parse(str) {
-  str = String(str);
-  if (str.length > 100) {
-    return;
-  }
-  var match = /^(-?(?:\d+)?\.?\d+) *(milliseconds?|msecs?|ms|seconds?|secs?|s|minutes?|mins?|m|hours?|hrs?|h|days?|d|weeks?|w|years?|yrs?|y)?$/i.exec(
-    str
-  );
-  if (!match) {
-    return;
-  }
-  var n = parseFloat(match[1]);
-  var type = (match[2] || 'ms').toLowerCase();
-  switch (type) {
-    case 'years':
-    case 'year':
-    case 'yrs':
-    case 'yr':
-    case 'y':
-      return n * y;
-    case 'weeks':
-    case 'week':
-    case 'w':
-      return n * w;
-    case 'days':
-    case 'day':
-    case 'd':
-      return n * d;
-    case 'hours':
-    case 'hour':
-    case 'hrs':
-    case 'hr':
-    case 'h':
-      return n * h;
-    case 'minutes':
-    case 'minute':
-    case 'mins':
-    case 'min':
-    case 'm':
-      return n * m;
-    case 'seconds':
-    case 'second':
-    case 'secs':
-    case 'sec':
-    case 's':
-      return n * s;
-    case 'milliseconds':
-    case 'millisecond':
-    case 'msecs':
-    case 'msec':
-    case 'ms':
-      return n;
-    default:
-      return undefined;
-  }
-}
-
-/**
- * Short format for `ms`.
- *
- * @param {Number} ms
- * @return {String}
- * @api private
- */
-
-function fmtShort(ms) {
-  var msAbs = Math.abs(ms);
-  if (msAbs >= d) {
-    return Math.round(ms / d) + 'd';
-  }
-  if (msAbs >= h) {
-    return Math.round(ms / h) + 'h';
-  }
-  if (msAbs >= m) {
-    return Math.round(ms / m) + 'm';
-  }
-  if (msAbs >= s) {
-    return Math.round(ms / s) + 's';
-  }
-  return ms + 'ms';
-}
-
-/**
- * Long format for `ms`.
- *
- * @param {Number} ms
- * @return {String}
- * @api private
- */
-
-function fmtLong(ms) {
-  var msAbs = Math.abs(ms);
-  if (msAbs >= d) {
-    return plural(ms, msAbs, d, 'day');
-  }
-  if (msAbs >= h) {
-    return plural(ms, msAbs, h, 'hour');
-  }
-  if (msAbs >= m) {
-    return plural(ms, msAbs, m, 'minute');
-  }
-  if (msAbs >= s) {
-    return plural(ms, msAbs, s, 'second');
-  }
-  return ms + ' ms';
-}
-
-/**
- * Pluralization helper.
- */
-
-function plural(ms, msAbs, n, name) {
-  var isPlural = msAbs >= n * 1.5;
-  return Math.round(ms / n) + ' ' + name + (isPlural ? 's' : '');
-}
-
 },{}],36:[function(require,module,exports){
 /**
  * Compiles a querystring
@@ -18030,8 +17902,37 @@ module.exports = function parseuri(str) {
         uri.ipv6uri = true;
     }
 
+    uri.pathNames = pathNames(uri, uri['path']);
+    uri.queryKey = queryKey(uri, uri['query']);
+
     return uri;
 };
+
+function pathNames(obj, path) {
+    var regx = /\/{2,9}/g,
+        names = path.replace(regx, "/").split("/");
+
+    if (path.substr(0, 1) == '/' || path.length === 0) {
+        names.splice(0, 1);
+    }
+    if (path.substr(path.length - 1, 1) == '/') {
+        names.splice(names.length - 1, 1);
+    }
+
+    return names;
+}
+
+function queryKey(uri, query) {
+    var data = {};
+
+    query.replace(/(?:^|&)([^&=]*)=?([^&]*)/g, function ($0, $1, $2) {
+        if ($1) {
+            data[$1] = $2;
+        }
+    });
+
+    return data;
+}
 
 },{}],38:[function(require,module,exports){
 // shim for using process in browser
@@ -18494,7 +18395,7 @@ exports.connect = lookup;
 exports.Manager = require('./manager');
 exports.Socket = require('./socket');
 
-},{"./manager":43,"./socket":45,"./url":46,"debug":13,"socket.io-parser":51}],43:[function(require,module,exports){
+},{"./manager":43,"./socket":45,"./url":46,"debug":47,"socket.io-parser":52}],43:[function(require,module,exports){
 
 /**
  * Module dependencies.
@@ -18752,6 +18653,10 @@ Manager.prototype.connect = function (fn, opts) {
   if (false !== this._timeout) {
     var timeout = this._timeout;
     debug('connect attempt will timeout after %d', timeout);
+
+    if (timeout === 0) {
+      openSub.destroy(); // prevents a race condition with the 'open' event
+    }
 
     // set timer
     var timer = setTimeout(function () {
@@ -19069,7 +18974,7 @@ Manager.prototype.onreconnect = function () {
   this.emitAll('reconnect', attempt);
 };
 
-},{"./on":44,"./socket":45,"backo2":3,"component-bind":9,"component-emitter":47,"debug":13,"engine.io-client":16,"indexof":33,"socket.io-parser":51}],44:[function(require,module,exports){
+},{"./on":44,"./socket":45,"backo2":3,"component-bind":9,"component-emitter":10,"debug":47,"engine.io-client":14,"indexof":34,"socket.io-parser":52}],44:[function(require,module,exports){
 
 /**
  * Module exports.
@@ -19202,7 +19107,7 @@ Socket.prototype.connect = function () {
   if (this.connected) return this;
 
   this.subEvents();
-  this.io.open(); // ensure open
+  if (!this.io.reconnecting) this.io.open(); // ensure open
   if ('open' === this.io.readyState) this.onopen();
   this.emit('connecting');
   return this;
@@ -19535,7 +19440,7 @@ Socket.prototype.binary = function (binary) {
   return this;
 };
 
-},{"./on":44,"component-bind":9,"component-emitter":47,"debug":13,"has-binary2":29,"parseqs":36,"socket.io-parser":51,"to-array":55}],46:[function(require,module,exports){
+},{"./on":44,"component-bind":9,"component-emitter":10,"debug":47,"has-binary2":30,"parseqs":36,"socket.io-parser":52,"to-array":54}],46:[function(require,module,exports){
 
 /**
  * Module dependencies.
@@ -19612,328 +19517,15 @@ function url (uri, loc) {
   return obj;
 }
 
-},{"debug":13,"parseuri":37}],47:[function(require,module,exports){
-
-/**
- * Expose `Emitter`.
- */
-
-if (typeof module !== 'undefined') {
-  module.exports = Emitter;
-}
-
-/**
- * Initialize a new `Emitter`.
- *
- * @api public
- */
-
-function Emitter(obj) {
-  if (obj) return mixin(obj);
-};
-
-/**
- * Mixin the emitter properties.
- *
- * @param {Object} obj
- * @return {Object}
- * @api private
- */
-
-function mixin(obj) {
-  for (var key in Emitter.prototype) {
-    obj[key] = Emitter.prototype[key];
-  }
-  return obj;
-}
-
-/**
- * Listen on the given `event` with `fn`.
- *
- * @param {String} event
- * @param {Function} fn
- * @return {Emitter}
- * @api public
- */
-
-Emitter.prototype.on =
-Emitter.prototype.addEventListener = function(event, fn){
-  this._callbacks = this._callbacks || {};
-  (this._callbacks['$' + event] = this._callbacks['$' + event] || [])
-    .push(fn);
-  return this;
-};
-
-/**
- * Adds an `event` listener that will be invoked a single
- * time then automatically removed.
- *
- * @param {String} event
- * @param {Function} fn
- * @return {Emitter}
- * @api public
- */
-
-Emitter.prototype.once = function(event, fn){
-  function on() {
-    this.off(event, on);
-    fn.apply(this, arguments);
-  }
-
-  on.fn = fn;
-  this.on(event, on);
-  return this;
-};
-
-/**
- * Remove the given callback for `event` or all
- * registered callbacks.
- *
- * @param {String} event
- * @param {Function} fn
- * @return {Emitter}
- * @api public
- */
-
-Emitter.prototype.off =
-Emitter.prototype.removeListener =
-Emitter.prototype.removeAllListeners =
-Emitter.prototype.removeEventListener = function(event, fn){
-  this._callbacks = this._callbacks || {};
-
-  // all
-  if (0 == arguments.length) {
-    this._callbacks = {};
-    return this;
-  }
-
-  // specific event
-  var callbacks = this._callbacks['$' + event];
-  if (!callbacks) return this;
-
-  // remove all handlers
-  if (1 == arguments.length) {
-    delete this._callbacks['$' + event];
-    return this;
-  }
-
-  // remove specific handler
-  var cb;
-  for (var i = 0; i < callbacks.length; i++) {
-    cb = callbacks[i];
-    if (cb === fn || cb.fn === fn) {
-      callbacks.splice(i, 1);
-      break;
-    }
-  }
-  return this;
-};
-
-/**
- * Emit `event` with the given args.
- *
- * @param {String} event
- * @param {Mixed} ...
- * @return {Emitter}
- */
-
-Emitter.prototype.emit = function(event){
-  this._callbacks = this._callbacks || {};
-  var args = [].slice.call(arguments, 1)
-    , callbacks = this._callbacks['$' + event];
-
-  if (callbacks) {
-    callbacks = callbacks.slice(0);
-    for (var i = 0, len = callbacks.length; i < len; ++i) {
-      callbacks[i].apply(this, args);
-    }
-  }
-
-  return this;
-};
-
-/**
- * Return array of callbacks for `event`.
- *
- * @param {String} event
- * @return {Array}
- * @api public
- */
-
-Emitter.prototype.listeners = function(event){
-  this._callbacks = this._callbacks || {};
-  return this._callbacks['$' + event] || [];
-};
-
-/**
- * Check if this emitter has `event` handlers.
- *
- * @param {String} event
- * @return {Boolean}
- * @api public
- */
-
-Emitter.prototype.hasListeners = function(event){
-  return !! this.listeners(event).length;
-};
-
-},{}],48:[function(require,module,exports){
-arguments[4][30][0].apply(exports,arguments)
-},{"dup":30}],49:[function(require,module,exports){
-/**
- * Helpers.
- */
-
-var s = 1000;
-var m = s * 60;
-var h = m * 60;
-var d = h * 24;
-var y = d * 365.25;
-
-/**
- * Parse or format the given `val`.
- *
- * Options:
- *
- *  - `long` verbose formatting [false]
- *
- * @param {String|Number} val
- * @param {Object} [options]
- * @throws {Error} throw an error if val is not a non-empty string or a number
- * @return {String|Number}
- * @api public
- */
-
-module.exports = function(val, options) {
-  options = options || {};
-  var type = typeof val;
-  if (type === 'string' && val.length > 0) {
-    return parse(val);
-  } else if (type === 'number' && isNaN(val) === false) {
-    return options.long ? fmtLong(val) : fmtShort(val);
-  }
-  throw new Error(
-    'val is not a non-empty string or a valid number. val=' +
-      JSON.stringify(val)
-  );
-};
-
-/**
- * Parse the given `str` and return milliseconds.
- *
- * @param {String} str
- * @return {Number}
- * @api private
- */
-
-function parse(str) {
-  str = String(str);
-  if (str.length > 100) {
-    return;
-  }
-  var match = /^((?:\d+)?\.?\d+) *(milliseconds?|msecs?|ms|seconds?|secs?|s|minutes?|mins?|m|hours?|hrs?|h|days?|d|years?|yrs?|y)?$/i.exec(
-    str
-  );
-  if (!match) {
-    return;
-  }
-  var n = parseFloat(match[1]);
-  var type = (match[2] || 'ms').toLowerCase();
-  switch (type) {
-    case 'years':
-    case 'year':
-    case 'yrs':
-    case 'yr':
-    case 'y':
-      return n * y;
-    case 'days':
-    case 'day':
-    case 'd':
-      return n * d;
-    case 'hours':
-    case 'hour':
-    case 'hrs':
-    case 'hr':
-    case 'h':
-      return n * h;
-    case 'minutes':
-    case 'minute':
-    case 'mins':
-    case 'min':
-    case 'm':
-      return n * m;
-    case 'seconds':
-    case 'second':
-    case 'secs':
-    case 'sec':
-    case 's':
-      return n * s;
-    case 'milliseconds':
-    case 'millisecond':
-    case 'msecs':
-    case 'msec':
-    case 'ms':
-      return n;
-    default:
-      return undefined;
-  }
-}
-
-/**
- * Short format for `ms`.
- *
- * @param {Number} ms
- * @return {String}
- * @api private
- */
-
-function fmtShort(ms) {
-  if (ms >= d) {
-    return Math.round(ms / d) + 'd';
-  }
-  if (ms >= h) {
-    return Math.round(ms / h) + 'h';
-  }
-  if (ms >= m) {
-    return Math.round(ms / m) + 'm';
-  }
-  if (ms >= s) {
-    return Math.round(ms / s) + 's';
-  }
-  return ms + 'ms';
-}
-
-/**
- * Long format for `ms`.
- *
- * @param {Number} ms
- * @return {String}
- * @api private
- */
-
-function fmtLong(ms) {
-  return plural(ms, d, 'day') ||
-    plural(ms, h, 'hour') ||
-    plural(ms, m, 'minute') ||
-    plural(ms, s, 'second') ||
-    ms + ' ms';
-}
-
-/**
- * Pluralization helper.
- */
-
-function plural(ms, n, name) {
-  if (ms < n) {
-    return;
-  }
-  if (ms < n * 1.5) {
-    return Math.floor(ms / n) + ' ' + name;
-  }
-  return Math.ceil(ms / n) + ' ' + name + 's';
-}
-
-},{}],50:[function(require,module,exports){
+},{"debug":47,"parseuri":37}],47:[function(require,module,exports){
+arguments[4][23][0].apply(exports,arguments)
+},{"./debug":48,"_process":38,"dup":23}],48:[function(require,module,exports){
+arguments[4][24][0].apply(exports,arguments)
+},{"dup":24,"ms":50}],49:[function(require,module,exports){
+arguments[4][31][0].apply(exports,arguments)
+},{"dup":31}],50:[function(require,module,exports){
+arguments[4][25][0].apply(exports,arguments)
+},{"dup":25}],51:[function(require,module,exports){
 /*global Blob,File*/
 
 /**
@@ -20076,7 +19668,7 @@ exports.removeBlobs = function(data, callback) {
   }
 };
 
-},{"./is-buffer":52,"isarray":48}],51:[function(require,module,exports){
+},{"./is-buffer":53,"isarray":49}],52:[function(require,module,exports){
 
 /**
  * Module dependencies.
@@ -20493,7 +20085,7 @@ function error(msg) {
   };
 }
 
-},{"./binary":50,"./is-buffer":52,"component-emitter":47,"debug":53,"isarray":48}],52:[function(require,module,exports){
+},{"./binary":51,"./is-buffer":53,"component-emitter":10,"debug":47,"isarray":49}],53:[function(require,module,exports){
 (function (Buffer){(function (){
 
 module.exports = isBuf;
@@ -20517,433 +20109,7 @@ function isBuf(obj) {
 }
 
 }).call(this)}).call(this,require("buffer").Buffer)
-},{"buffer":8}],53:[function(require,module,exports){
-(function (process){(function (){
-/**
- * This is the web browser implementation of `debug()`.
- *
- * Expose `debug()` as the module.
- */
-
-exports = module.exports = require('./debug');
-exports.log = log;
-exports.formatArgs = formatArgs;
-exports.save = save;
-exports.load = load;
-exports.useColors = useColors;
-exports.storage = 'undefined' != typeof chrome
-               && 'undefined' != typeof chrome.storage
-                  ? chrome.storage.local
-                  : localstorage();
-
-/**
- * Colors.
- */
-
-exports.colors = [
-  '#0000CC', '#0000FF', '#0033CC', '#0033FF', '#0066CC', '#0066FF', '#0099CC',
-  '#0099FF', '#00CC00', '#00CC33', '#00CC66', '#00CC99', '#00CCCC', '#00CCFF',
-  '#3300CC', '#3300FF', '#3333CC', '#3333FF', '#3366CC', '#3366FF', '#3399CC',
-  '#3399FF', '#33CC00', '#33CC33', '#33CC66', '#33CC99', '#33CCCC', '#33CCFF',
-  '#6600CC', '#6600FF', '#6633CC', '#6633FF', '#66CC00', '#66CC33', '#9900CC',
-  '#9900FF', '#9933CC', '#9933FF', '#99CC00', '#99CC33', '#CC0000', '#CC0033',
-  '#CC0066', '#CC0099', '#CC00CC', '#CC00FF', '#CC3300', '#CC3333', '#CC3366',
-  '#CC3399', '#CC33CC', '#CC33FF', '#CC6600', '#CC6633', '#CC9900', '#CC9933',
-  '#CCCC00', '#CCCC33', '#FF0000', '#FF0033', '#FF0066', '#FF0099', '#FF00CC',
-  '#FF00FF', '#FF3300', '#FF3333', '#FF3366', '#FF3399', '#FF33CC', '#FF33FF',
-  '#FF6600', '#FF6633', '#FF9900', '#FF9933', '#FFCC00', '#FFCC33'
-];
-
-/**
- * Currently only WebKit-based Web Inspectors, Firefox >= v31,
- * and the Firebug extension (any Firefox version) are known
- * to support "%c" CSS customizations.
- *
- * TODO: add a `localStorage` variable to explicitly enable/disable colors
- */
-
-function useColors() {
-  // NB: In an Electron preload script, document will be defined but not fully
-  // initialized. Since we know we're in Chrome, we'll just detect this case
-  // explicitly
-  if (typeof window !== 'undefined' && window.process && window.process.type === 'renderer') {
-    return true;
-  }
-
-  // Internet Explorer and Edge do not support colors.
-  if (typeof navigator !== 'undefined' && navigator.userAgent && navigator.userAgent.toLowerCase().match(/(edge|trident)\/(\d+)/)) {
-    return false;
-  }
-
-  // is webkit? http://stackoverflow.com/a/16459606/376773
-  // document is undefined in react-native: https://github.com/facebook/react-native/pull/1632
-  return (typeof document !== 'undefined' && document.documentElement && document.documentElement.style && document.documentElement.style.WebkitAppearance) ||
-    // is firebug? http://stackoverflow.com/a/398120/376773
-    (typeof window !== 'undefined' && window.console && (window.console.firebug || (window.console.exception && window.console.table))) ||
-    // is firefox >= v31?
-    // https://developer.mozilla.org/en-US/docs/Tools/Web_Console#Styling_messages
-    (typeof navigator !== 'undefined' && navigator.userAgent && navigator.userAgent.toLowerCase().match(/firefox\/(\d+)/) && parseInt(RegExp.$1, 10) >= 31) ||
-    // double check webkit in userAgent just in case we are in a worker
-    (typeof navigator !== 'undefined' && navigator.userAgent && navigator.userAgent.toLowerCase().match(/applewebkit\/(\d+)/));
-}
-
-/**
- * Map %j to `JSON.stringify()`, since no Web Inspectors do that by default.
- */
-
-exports.formatters.j = function(v) {
-  try {
-    return JSON.stringify(v);
-  } catch (err) {
-    return '[UnexpectedJSONParseError]: ' + err.message;
-  }
-};
-
-
-/**
- * Colorize log arguments if enabled.
- *
- * @api public
- */
-
-function formatArgs(args) {
-  var useColors = this.useColors;
-
-  args[0] = (useColors ? '%c' : '')
-    + this.namespace
-    + (useColors ? ' %c' : ' ')
-    + args[0]
-    + (useColors ? '%c ' : ' ')
-    + '+' + exports.humanize(this.diff);
-
-  if (!useColors) return;
-
-  var c = 'color: ' + this.color;
-  args.splice(1, 0, c, 'color: inherit')
-
-  // the final "%c" is somewhat tricky, because there could be other
-  // arguments passed either before or after the %c, so we need to
-  // figure out the correct index to insert the CSS into
-  var index = 0;
-  var lastC = 0;
-  args[0].replace(/%[a-zA-Z%]/g, function(match) {
-    if ('%%' === match) return;
-    index++;
-    if ('%c' === match) {
-      // we only are interested in the *last* %c
-      // (the user may have provided their own)
-      lastC = index;
-    }
-  });
-
-  args.splice(lastC, 0, c);
-}
-
-/**
- * Invokes `console.log()` when available.
- * No-op when `console.log` is not a "function".
- *
- * @api public
- */
-
-function log() {
-  // this hackery is required for IE8/9, where
-  // the `console.log` function doesn't have 'apply'
-  return 'object' === typeof console
-    && console.log
-    && Function.prototype.apply.call(console.log, console, arguments);
-}
-
-/**
- * Save `namespaces`.
- *
- * @param {String} namespaces
- * @api private
- */
-
-function save(namespaces) {
-  try {
-    if (null == namespaces) {
-      exports.storage.removeItem('debug');
-    } else {
-      exports.storage.debug = namespaces;
-    }
-  } catch(e) {}
-}
-
-/**
- * Load `namespaces`.
- *
- * @return {String} returns the previously persisted debug modes
- * @api private
- */
-
-function load() {
-  var r;
-  try {
-    r = exports.storage.debug;
-  } catch(e) {}
-
-  // If debug isn't set in LS, and we're in Electron, try to load $DEBUG
-  if (!r && typeof process !== 'undefined' && 'env' in process) {
-    r = process.env.DEBUG;
-  }
-
-  return r;
-}
-
-/**
- * Enable namespaces listed in `localStorage.debug` initially.
- */
-
-exports.enable(load());
-
-/**
- * Localstorage attempts to return the localstorage.
- *
- * This is necessary because safari throws
- * when a user disables cookies/localstorage
- * and you attempt to access it.
- *
- * @return {LocalStorage}
- * @api private
- */
-
-function localstorage() {
-  try {
-    return window.localStorage;
-  } catch (e) {}
-}
-
-}).call(this)}).call(this,require('_process'))
-},{"./debug":54,"_process":38}],54:[function(require,module,exports){
-
-/**
- * This is the common logic for both the Node.js and web browser
- * implementations of `debug()`.
- *
- * Expose `debug()` as the module.
- */
-
-exports = module.exports = createDebug.debug = createDebug['default'] = createDebug;
-exports.coerce = coerce;
-exports.disable = disable;
-exports.enable = enable;
-exports.enabled = enabled;
-exports.humanize = require('ms');
-
-/**
- * Active `debug` instances.
- */
-exports.instances = [];
-
-/**
- * The currently active debug mode names, and names to skip.
- */
-
-exports.names = [];
-exports.skips = [];
-
-/**
- * Map of special "%n" handling functions, for the debug "format" argument.
- *
- * Valid key names are a single, lower or upper-case letter, i.e. "n" and "N".
- */
-
-exports.formatters = {};
-
-/**
- * Select a color.
- * @param {String} namespace
- * @return {Number}
- * @api private
- */
-
-function selectColor(namespace) {
-  var hash = 0, i;
-
-  for (i in namespace) {
-    hash  = ((hash << 5) - hash) + namespace.charCodeAt(i);
-    hash |= 0; // Convert to 32bit integer
-  }
-
-  return exports.colors[Math.abs(hash) % exports.colors.length];
-}
-
-/**
- * Create a debugger with the given `namespace`.
- *
- * @param {String} namespace
- * @return {Function}
- * @api public
- */
-
-function createDebug(namespace) {
-
-  var prevTime;
-
-  function debug() {
-    // disabled?
-    if (!debug.enabled) return;
-
-    var self = debug;
-
-    // set `diff` timestamp
-    var curr = +new Date();
-    var ms = curr - (prevTime || curr);
-    self.diff = ms;
-    self.prev = prevTime;
-    self.curr = curr;
-    prevTime = curr;
-
-    // turn the `arguments` into a proper Array
-    var args = new Array(arguments.length);
-    for (var i = 0; i < args.length; i++) {
-      args[i] = arguments[i];
-    }
-
-    args[0] = exports.coerce(args[0]);
-
-    if ('string' !== typeof args[0]) {
-      // anything else let's inspect with %O
-      args.unshift('%O');
-    }
-
-    // apply any `formatters` transformations
-    var index = 0;
-    args[0] = args[0].replace(/%([a-zA-Z%])/g, function(match, format) {
-      // if we encounter an escaped % then don't increase the array index
-      if (match === '%%') return match;
-      index++;
-      var formatter = exports.formatters[format];
-      if ('function' === typeof formatter) {
-        var val = args[index];
-        match = formatter.call(self, val);
-
-        // now we need to remove `args[index]` since it's inlined in the `format`
-        args.splice(index, 1);
-        index--;
-      }
-      return match;
-    });
-
-    // apply env-specific formatting (colors, etc.)
-    exports.formatArgs.call(self, args);
-
-    var logFn = debug.log || exports.log || console.log.bind(console);
-    logFn.apply(self, args);
-  }
-
-  debug.namespace = namespace;
-  debug.enabled = exports.enabled(namespace);
-  debug.useColors = exports.useColors();
-  debug.color = selectColor(namespace);
-  debug.destroy = destroy;
-
-  // env-specific initialization logic for debug instances
-  if ('function' === typeof exports.init) {
-    exports.init(debug);
-  }
-
-  exports.instances.push(debug);
-
-  return debug;
-}
-
-function destroy () {
-  var index = exports.instances.indexOf(this);
-  if (index !== -1) {
-    exports.instances.splice(index, 1);
-    return true;
-  } else {
-    return false;
-  }
-}
-
-/**
- * Enables a debug mode by namespaces. This can include modes
- * separated by a colon and wildcards.
- *
- * @param {String} namespaces
- * @api public
- */
-
-function enable(namespaces) {
-  exports.save(namespaces);
-
-  exports.names = [];
-  exports.skips = [];
-
-  var i;
-  var split = (typeof namespaces === 'string' ? namespaces : '').split(/[\s,]+/);
-  var len = split.length;
-
-  for (i = 0; i < len; i++) {
-    if (!split[i]) continue; // ignore empty strings
-    namespaces = split[i].replace(/\*/g, '.*?');
-    if (namespaces[0] === '-') {
-      exports.skips.push(new RegExp('^' + namespaces.substr(1) + '$'));
-    } else {
-      exports.names.push(new RegExp('^' + namespaces + '$'));
-    }
-  }
-
-  for (i = 0; i < exports.instances.length; i++) {
-    var instance = exports.instances[i];
-    instance.enabled = exports.enabled(instance.namespace);
-  }
-}
-
-/**
- * Disable debug output.
- *
- * @api public
- */
-
-function disable() {
-  exports.enable('');
-}
-
-/**
- * Returns true if the given mode name is enabled, false otherwise.
- *
- * @param {String} name
- * @return {Boolean}
- * @api public
- */
-
-function enabled(name) {
-  if (name[name.length - 1] === '*') {
-    return true;
-  }
-  var i, len;
-  for (i = 0, len = exports.skips.length; i < len; i++) {
-    if (exports.skips[i].test(name)) {
-      return false;
-    }
-  }
-  for (i = 0, len = exports.names.length; i < len; i++) {
-    if (exports.names[i].test(name)) {
-      return true;
-    }
-  }
-  return false;
-}
-
-/**
- * Coerce `val`.
- *
- * @param {Mixed} val
- * @return {Mixed}
- * @api private
- */
-
-function coerce(val) {
-  if (val instanceof Error) return val.stack || val.message;
-  return val;
-}
-
-},{"ms":49}],55:[function(require,module,exports){
+},{"buffer":8}],54:[function(require,module,exports){
 module.exports = toArray
 
 function toArray(list, index) {
@@ -20958,7 +20124,7 @@ function toArray(list, index) {
     return array
 }
 
-},{}],56:[function(require,module,exports){
+},{}],55:[function(require,module,exports){
 'use strict';
 
 var alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_'.split('')
@@ -21028,7 +20194,7 @@ yeast.encode = encode;
 yeast.decode = decode;
 module.exports = yeast;
 
-},{}],57:[function(require,module,exports){
+},{}],56:[function(require,module,exports){
 (() => {
     if (!String.prototype.includes || !Array.prototype.findIndex) return;
     if (window.location.pathname.endsWith('.html')) return;
@@ -21075,7 +20241,7 @@ module.exports = yeast;
     };
 })();
 
-},{"./modules/side_groups/index.js":60,"./settings":65,"./utils/debug":67,"./utils/twitch":70,"./watcher":73,"cookies-js":12}],58:[function(require,module,exports){
+},{"./modules/side_groups/index.js":59,"./settings":65,"./utils/debug":67,"./utils/twitch":70,"./watcher":73,"cookies-js":12}],57:[function(require,module,exports){
 const groupSortBy = require('./groupSortBy')
 const debug = require('../../utils/debug')
 const twitch = require('../../utils/twitch')
@@ -21420,7 +20586,8 @@ class streamTitleToolTipHandler{
 
         let div3 = document.createElement('div')
         div3.className=''
-        div3.style.transform='translate('+(aWidth+2)+'px,'+(aRectTop)+'px)'
+        // you must do 0.2*width cuz of pinbutton slide feature which require 20 %
+        div3.style.transform='translate('+(aWidth+5+0.2*aWidth)+'px,'+(aRectTop)+'px)'
         div3.style.position = 'absolute'
         
         let div4 = document.createElement('div')
@@ -21787,7 +20954,8 @@ function onBackArrowReorderMenuButtonClick(divReorderMenu,divSettingsMenu){
     divReorderMenu.style.transform='scale(0)'
     setTimeout(function(){
         divReorderMenu.style.display='none'
-        divSettingsMenu.style.display=''
+        divSettingsMenu.style.display='flex'
+        divSettingsMenu.style.alignItems='center'
         divSettingsMenu.style.transform='scale(1)'
     },250)
 }
@@ -22146,7 +21314,7 @@ function streamerGoesOnline(groupID,streamerInfo,liveColor){
 
     div9.className = "tw-align-items-center tw-flex"
 
-    div10.className="tw-border-radius-rounded tw-channel-status-indicator--live tw-channel-status-indicator--small tw-inline-block tw-relative"
+    div10.className="ScChannelStatusIndicator-sc-1cf6j56-0 fSVvnY tw-channel-status-indicator"
     div10.style.setProperty("background-color", liveColor, "important");
 
     div11.className="tw-mg-l-05"
@@ -22260,7 +21428,7 @@ module.exports = {
         return new groupSection(_groupObject,_sideGroupsModule)
     }
 }
-},{"../../utils/debug":67,"../../utils/twitch":70,"../../utils/uptextv-api":71,"../../watchers/darkmode.js":74,"./../../utils/uptextv-image":72,"./groupSortBy":59}],59:[function(require,module,exports){
+},{"../../utils/debug":67,"../../utils/twitch":70,"../../utils/uptextv-api":71,"../../watchers/darkmode.js":74,"./../../utils/uptextv-image":72,"./groupSortBy":58}],58:[function(require,module,exports){
 const uptextvAPI = require('../../utils/uptextv-api')
 const twitch = require('../../utils/twitch')
 
@@ -22458,15 +21626,15 @@ module.exports = {
         return new groupSortBy(_currentGroupSection)
     }
 }     
-},{"../../utils/twitch":70,"../../utils/uptextv-api":71}],60:[function(require,module,exports){
+},{"../../utils/twitch":70,"../../utils/uptextv-api":71}],59:[function(require,module,exports){
 const watcher = require('../../watcher');
 const twitch = require('../../utils/twitch')
 const uptextvAPI = require('../../utils/uptextv-api')
 const debug = require('../../utils/debug')
 const groupSection = require('./groupSection')
-const pinButton = require('./pinButton');
+const pinButtonFollow = require('./pinButtonFollow');
+const pinButtonSideNav = require('./pinButtonSideNav')
 const sideBottomBar = require('./sideBottomBar');
-const follow = require('../../watchers/follow')
 
 const defaultLiveColor = '#007aa3'
 
@@ -22495,6 +21663,7 @@ class SideGroupsModule{
               sideBottomBar.setup(this)
             })
             checkSettingsMenuCollision()
+            pinButtonSideNav.setup(this)
             handleUpdateEach5min(this)
           })
         })
@@ -22503,21 +21672,8 @@ class SideGroupsModule{
       })
 
       watcher.on('load.followbar',()=>{
-        var pinButtonInstance = null
-
-        if(follow.isFollowing){
-          pinButtonInstance = pinButton.setup(this)
-        }
-
-        follow.onFollow(()=>{
-          pinButtonInstance = pinButton.setup(this)
-        })
-
-        follow.onUnfollow(()=>{
-          pinButtonInstance.selfRemove()
-          pinButtonInstance = null
-        })  
-      }) 
+        pinButtonFollow.setup(this)
+      })
     }
 
     getUserID(){
@@ -22662,11 +21818,12 @@ function checkSettingsMenuCollision(){
 }
 
 module.exports = new SideGroupsModule()
-},{"../../utils/debug":67,"../../utils/twitch":70,"../../utils/uptextv-api":71,"../../watcher":73,"../../watchers/follow":75,"./groupSection":58,"./pinButton":61,"./sideBottomBar":62}],61:[function(require,module,exports){
+},{"../../utils/debug":67,"../../utils/twitch":70,"../../utils/uptextv-api":71,"../../watcher":73,"./groupSection":57,"./pinButtonFollow":60,"./pinButtonSideNav":61,"./sideBottomBar":62}],60:[function(require,module,exports){
 const $ = require('jquery');
 const uptextvIMG = require('../../utils/uptextv-image').get()
 const darkmode = require('../../watchers/darkmode.js')
 const twitch = require('../../utils/twitch')
+const follow = require('../../watchers/follow')
 const debug = require('../../utils/debug')
 
 var sideGroupsModule
@@ -22676,10 +21833,6 @@ class pinButton{
         sideGroupsModule = _sideGroupsModule
         checkSetup()
         setup()
-    }
-
-    selfRemove(){
-        removePinButton()
     }
 }
 
@@ -22702,109 +21855,113 @@ function removePinButton(){
 function setup(){
     let buttonID = "pin-button"
     let parentdiv = document.getElementsByClassName("tw-align-items-center tw-flex tw-full-height tw-overflow-hidden")[0]
-  
+
     if(parentdiv!=null){
-  
-      let div0 = document.createElement("div")
-      div0.className= "follow-btn__notification-toggle-container follow-btn__notification-toggle-container--visible tw-mg-l-1"
-  
-      let div1 = document.createElement("div")
-  
-      let div2 = document.createElement("div") // ADD MOUSE OVER / LEFT
-      div2.addEventListener("mouseover",function(){
+
+        let div0 = document.createElement("div")
+        div0.className= "follow-btn__notification-toggle-container follow-btn__notification-toggle-container--visible tw-mg-l-1"
+
+        let div1 = document.createElement("div")
+
+        let div2 = document.createElement("div") // ADD MOUSE OVER / LEFT
+        div2.addEventListener("mouseover",function(){
         changePinButtonBackgroundColorToBlue()
-      })
-      div2.addEventListener("mouseleave",function(){
-        if(!isMenuToPinSetup()){
+        })
+        div2.addEventListener("mouseleave",function(){
             changePinButtonBackgroundColorToNormal()
-        }
-      })
-  
-      let div3 = document.createElement("div")
-      div3.className="tw-border-radius-medium tw-c-background-base tw-inline-flex tw-overflow-hidden"
-  
-      let button0 = document.createElement("button") // HANDLE PIN / UNPIN / ADD TO SIDE SECTION / DELETE FROM SIDE SECTION
-      button0.id=buttonID
-      button0.className="tw-align-items-center tw-align-middle tw-border-bottom-left-radius-medium tw-border-bottom-right-radius-medium tw-border-top-left-radius-medium tw-border-top-right-radius-medium tw-core-button tw-core-button--secondary tw-full-width tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative"
-      button0.addEventListener('click', function(){
+        })
+
+        let div3 = document.createElement("div")
+        div3.className="tw-border-radius-medium tw-c-background-base tw-inline-flex tw-overflow-hidden"
+
+        let button0 = document.createElement("button") // HANDLE PIN / UNPIN / ADD TO SIDE SECTION / DELETE FROM SIDE SECTION
+        button0.id=buttonID
+        button0.className="tw-align-items-center tw-align-middle tw-border-bottom-left-radius-medium tw-border-bottom-right-radius-medium tw-border-top-left-radius-medium tw-border-top-right-radius-medium tw-core-button tw-core-button--secondary tw-full-width tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative"
+        button0.addEventListener('click', function(){
         buttonTreatment()
-      })
+        })
 
-      // you have a small bug when you switch from light to dark 
-      // button rgba aren't the same so you handle it here
-      darkmode.onDarkMode(()=>{
-        if(!isMenuToPinSetup()){
-            button0.style.backgroundColor='rgba(255, 255, 255, 0.15)'
+        // you have a small bug when you switch from light to dark 
+        // button rgba aren't the same so you handle it here
+        darkmode.onDarkMode(()=>{
+        button0.style.backgroundColor='rgba(255, 255, 255, 0.15)'
+        })
+
+        // you have a small bug when you switch from light to dark 
+        // button rgba aren't the same so you handle it here
+        darkmode.onLightMode(()=>{
+        button0.style.backgroundColor='rgba(0, 0, 0, 0.05)'
+        })
+
+        let div4 = document.createElement("div")
+        div4.className="tw-align-items-center tw-core-button-label tw-flex tw-flex-grow-0"
+
+        let div5 = document.createElement("div")
+        div5.className="tw-flex-grow-0"
+
+        let div6 = document.createElement("div")
+        div6.className="tw-align-items-center tw-flex tw-justify-content-center"
+
+        let div7 = document.createElement("div")
+        div7.className="tw-align-items-center tw-flex tw-justify-content-center tw-mg-r-0"
+        div7.style="transform: translateX(0px) scale(1); transition: transform 300ms ease 0s;"
+
+        let div8 = document.createElement("div")
+        div8.className="tw-animation tw-animation--bounce-in tw-animation--duration-long tw-animation--fill-mode-both tw-animation--timing-ease"
+
+        let div9 = document.createElement("div")
+        div9.className="tw-align-items-center tw-flex tw-justify-content-center"
+
+        let figure0 = document.createElement("figure")
+        figure0.className="tw-svg"
+
+        let img0 = document.createElement("img")
+        img0.className="tw-svg__asset tw-svg__asset--inherit tw-svg__asset--notificationbell"
+        img0.src=uptextvIMG.pin_icon//browser.runtime.getURL("../src/assets/icon/icon-pin-mouse-over.svg");
+        img0.style.maxWidth='20px'
+
+        if(darkmode.isInDarkMode()){
+            img0.style.filter="invert(90%)"
+        }else{
+            img0.style.filter="invert(10%)"
         }
-      })
 
-      // you have a small bug when you switch from light to dark 
-      // button rgba aren't the same so you handle it here
-      darkmode.onLightMode(()=>{
-          if(!isMenuToPinSetup()){
-            button0.style.backgroundColor='rgba(0, 0, 0, 0.05)'
-          }
-      })
-  
-      let div4 = document.createElement("div")
-      div4.className="tw-align-items-center tw-core-button-label tw-flex tw-flex-grow-0"
-    
-      let div5 = document.createElement("div")
-      div5.className="tw-flex-grow-0"
-  
-      let div6 = document.createElement("div")
-      div6.className="tw-align-items-center tw-flex tw-justify-content-center"
-  
-      let div7 = document.createElement("div")
-      div7.className="tw-align-items-center tw-flex tw-justify-content-center tw-mg-r-0"
-      div7.style="transform: translateX(0px) scale(1); transition: transform 300ms ease 0s;"
-  
-      let div8 = document.createElement("div")
-      div8.className="tw-animation tw-animation--bounce-in tw-animation--duration-long tw-animation--fill-mode-both tw-animation--timing-ease"
-  
-      let div9 = document.createElement("div")
-      div9.className="tw-align-items-center tw-flex tw-justify-content-center"
-  
-      let figure0 = document.createElement("figure")
-      figure0.className="tw-svg"
-  
-      let img0 = document.createElement("img")
-      img0.className="tw-svg__asset tw-svg__asset--inherit tw-svg__asset--notificationbell"
-      img0.src=uptextvIMG.pin_icon//browser.runtime.getURL("../src/assets/icon/icon-pin-mouse-over.svg");
-      img0.style.maxWidth='20px'
-
-      if(darkmode.isInDarkMode()){
-          img0.style.filter="invert(90%)"
-      }else{
-          img0.style.filter="invert(10%)"
-      }
-
-      darkmode.onDarkMode(()=>{
+        darkmode.onDarkMode(()=>{
         img0.style.filter="invert(90%)"
-      })
+        })
 
-      darkmode.onLightMode(()=>{
+        darkmode.onLightMode(()=>{
         img0.style.filter="invert(10%)"
-      })
-  
-      let span0 = document.createElement("span")
-      span0.style="opacity: 1; transform: translateX(0px); transition: all 300ms ease 300ms;"
-  
-      parentdiv.appendChild(div0)
-      div0.appendChild(div1)
-      div1.appendChild(div2)
-      div2.appendChild(div3)
-      div3.appendChild(button0)
-      button0.append(div4)
-      div4.appendChild(div5)
-      div5.appendChild(div6)
-      div6.appendChild(div7)
-      div7.appendChild(div8)
-      div8.appendChild(div9)
-      div9.appendChild(figure0)
-      figure0.appendChild(img0)
-      div8.appendChild(span0)
+        })
+
+        let span0 = document.createElement("span")
+        span0.style="opacity: 1; transform: translateX(0px); transition: all 300ms ease 300ms;"
+
+        parentdiv.appendChild(div0)
+        div0.appendChild(div1)
+        div1.appendChild(div2)
+        div2.appendChild(div3)
+        div3.appendChild(button0)
+        button0.append(div4)
+        div4.appendChild(div5)
+        div5.appendChild(div6)
+        div6.appendChild(div7)
+        div7.appendChild(div8)
+        div8.appendChild(div9)
+        div9.appendChild(figure0)
+        figure0.appendChild(img0)
+        div8.appendChild(span0)
     }
+    /*if(!follow.isFollowing()){
+        document.getElementById('pin-button').style.display="none"
+    }
+    follow.onFollow(()=>{
+        document.getElementById('pin-button').style.display=""
+    })
+
+    follow.onUnfollow(()=>{
+        document.getElementById('pin-button').style.display="none"
+    })*/
 }
 
 // title of function prelly clear
@@ -22890,6 +22047,7 @@ DOMRect { x: 1315.2166748046875, y: 386, width: 40, height: 30, top: 386, right:
     div1.append(div3)
 
     let groupsSection = sideGroupsModule.getGroupsSection()
+    let streamerID = twitch.getCurrentChannel().id
     for(let x=0;x<groupsSection.length;x++){
         // we parse array from the end to the beginning
         // we do to get each groupSection name in the same order as displayed
@@ -22897,7 +22055,6 @@ DOMRect { x: 1315.2166748046875, y: 386, width: 40, height: 30, top: 386, right:
         let currentGroupSection = groupsSection[x]
         let currentGroupID = currentGroupSection.getGroupID()
         let currentGroupID_normal = currentGroupSection.getGroupID_normal()
-        let streamerID = twitch.getCurrentChannel().id
 
         /*
         <div>
@@ -23011,7 +22168,462 @@ module.exports = {
         return new pinButton(_sideGroupsModule)
     }
 }
-},{"../../utils/debug":67,"../../utils/twitch":70,"../../utils/uptextv-image":72,"../../watchers/darkmode.js":74,"jquery":34}],62:[function(require,module,exports){
+},{"../../utils/debug":67,"../../utils/twitch":70,"../../utils/uptextv-image":72,"../../watchers/darkmode.js":74,"../../watchers/follow":75,"jquery":35}],61:[function(require,module,exports){
+const $ = require('jquery');
+const uptextvIMG = require('../../utils/uptextv-image').get()
+const darkmode = require('../../watchers/darkmode.js')
+const debug = require('../../utils/debug');
+const uptextvAPI = require('../../utils/uptextv-api');
+
+var sideGroupsModule
+
+class pinButton{
+  constructor(_sideGroupsModule){
+    sideGroupsModule = _sideGroupsModule
+    setup()
+    listenerToDomNodeRemove()
+  }
+}
+
+function setup(){
+  let allElement = document.getElementsByClassName('side-nav-card__avatar')
+
+  for(var x=0;x<allElement.length;x++){
+    let currentElement = allElement[x].parentElement.parentElement
+
+    if(currentElement!=null && currentElement.getAttribute('uptextv-pin-button-setup')==null){
+      currentElement.setAttribute('uptextv-pin-button-setup',true)
+      currentElement.addEventListener('mouseenter',()=>{
+        currentElement.style.flexWrap="nowrap"
+        currentElement.style.display="flex"
+        currentElement.style.alignItems="center"
+        currentElement.children[0].style.setProperty ("width", "80%", "important")
+        setupHTML(currentElement)
+      })
+      currentElement.addEventListener('mouseleave',()=>{
+        // use to delete pin button duplication
+        if(!closeHandlerSetup){
+          let mainDivChildren = currentElement.children
+          for(let x=1;x<mainDivChildren.length;x++){
+            mainDivChildren[x].remove()
+          }
+          currentElement.style.flexWrap=""
+          currentElement.style.display=""
+          currentElement.style.alignItems=""
+          currentElement.children[0].style.setProperty ("width", "100%", "important")
+        }else{
+          // sometimes when you close handler is setup he might not trigger mouseleave event
+          // so currentElement won't width=100%
+          setTimeout(()=>{
+            if(!isMenuToPinSetup()){
+              currentElement.style.flexWrap=""
+              currentElement.style.display=""
+              currentElement.style.alignItems=""
+              currentElement.children[0].style.setProperty ("width", "100%", "important")
+            }
+          },30)
+        }
+      })
+    }
+  }
+}
+
+let waitingToCheckSetup = false
+function listenerToDomNodeRemove(){
+
+  let ElementToWatch = document.getElementsByClassName('tw-transition-group')
+
+  let setupAgain = ()=>{
+    if(!waitingToCheckSetup){
+      waitingToCheckSetup=true
+      setTimeout(()=>{
+        setup()
+        waitingToCheckSetup=false
+      },250)
+    }
+  }
+
+  for(let x=0;x<ElementToWatch.length;x++){
+    if(x<ElementToWatch.length-1-2){
+      // you must not check the 2 last element
+      ElementToWatch[x].addEventListener('DOMNodeRemoved',()=>{
+        setupAgain()
+      })
+
+      ElementToWatch[x].addEventListener('DOMNodeInserted',()=>{
+        setupAgain()
+      })
+    }
+  }
+}
+
+// this code add the pin button
+// twitch standard to look like button follow / notification : 
+// button use to add streamer id = 'pin-button'
+function setupHTML(parentDiv){
+  let duplicationPinButton = document.getElementsByClassName('uptextv-sidenav-pin-button')
+  for(let x=0;x<duplicationPinButton.length;x++){
+    duplicationPinButton[x].remove()
+  }
+  if(parentDiv!=null){
+
+    let div0 = document.createElement("div")
+    div0.className= "follow-btn__notification-toggle-container follow-btn__notification-toggle-container--visible uptextv-sidenav-pin-button"
+
+    let div1 = document.createElement("div")
+
+    let div2 = document.createElement("div") // ADD MOUSE OVER / LEFT
+
+    let div3 = document.createElement("div")
+    div3.className="tw-border-radius-medium tw-c-background-base tw-inline-flex tw-overflow-hidden"
+
+    let button0 = document.createElement("button") // HANDLE PIN / UNPIN / ADD TO SIDE SECTION / DELETE FROM SIDE SECTION
+    button0.className="tw-align-items-center tw-align-middle tw-border-bottom-left-radius-medium tw-border-bottom-right-radius-medium tw-border-top-left-radius-medium tw-border-top-right-radius-medium tw-core-button tw-core-button--secondary tw-full-width tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative"
+
+    let div4 = document.createElement("div")
+    div4.className="tw-align-items-center tw-core-button-label tw-flex tw-flex-grow-0"
+  
+    let div5 = document.createElement("div")
+    div5.className="tw-flex-grow-0"
+
+    let div6 = document.createElement("div")
+    div6.className="tw-align-items-center tw-flex tw-justify-content-center"
+
+    let div7 = document.createElement("div")
+    div7.className="tw-align-items-center tw-flex tw-justify-content-center tw-mg-r-0"
+    div7.style="transform: translateX(0px) scale(1); transition: transform 300ms ease 0s;"
+
+    let div8 = document.createElement("div")
+    div8.className="tw-animation tw-animation--bounce-in tw-animation--duration-long tw-animation--fill-mode-both tw-animation--timing-ease"
+
+    let div9 = document.createElement("div")
+    div9.className="tw-align-items-center tw-flex tw-justify-content-center"
+
+    let figure0 = document.createElement("figure")
+    figure0.className="tw-svg"
+
+    let img0 = document.createElement("img")
+    img0.className="tw-svg__asset tw-svg__asset--inherit tw-svg__asset--notificationbell"
+    img0.src=uptextvIMG.pin_icon//browser.runtime.getURL("../src/assets/icon/icon-pin-mouse-over.svg");
+    img0.style.maxWidth='20px'
+    
+    let span0 = document.createElement("span")
+    span0.style="opacity: 1; transform: translateX(0px); transition: all 300ms ease 300ms;"
+
+    div2.addEventListener("mouseover",function(){
+      changePinButtonBackgroundColorToBlue(button0)
+    })
+
+    div2.addEventListener("mouseleave",function(){
+      changePinButtonBackgroundColorToNormal(button0)
+    })
+
+    button0.addEventListener('click', function(){
+      buttonTreatment(button0)
+    })
+
+    if(darkmode.isInDarkMode()){
+      img0.style.filter="invert(90%)"
+    }else{
+      img0.style.filter="invert(10%)"
+    }
+
+    // you have a small bug when you switch from light to dark 
+    // button rgba aren't the same so you handle it here
+    darkmode.onDarkMode(()=>{
+      button0.style.backgroundColor='rgba(255, 255, 255, 0.15)'
+    })
+
+    // you have a small bug when you switch from light to dark 
+    // button rgba aren't the same so you handle it here
+    darkmode.onLightMode(()=>{
+      button0.style.backgroundColor='rgba(0, 0, 0, 0.05)'
+    })
+
+    darkmode.onDarkMode(()=>{
+      img0.style.filter="invert(90%)"
+    })
+
+    darkmode.onLightMode(()=>{
+      img0.style.filter="invert(10%)"
+    })
+
+
+    parentDiv.appendChild(div0)
+    div0.appendChild(div1)
+    div1.appendChild(div2)
+    div2.appendChild(div3)
+    div3.appendChild(button0)
+    button0.append(div4)
+    div4.appendChild(div5)
+    div5.appendChild(div6)
+    div6.appendChild(div7)
+    div7.appendChild(div8)
+    div8.appendChild(div9)
+    div9.appendChild(figure0)
+    figure0.appendChild(img0)
+    div8.appendChild(span0)
+  }
+}
+
+// title of function prelly clear
+function changePinButtonBackgroundColorToBlue(button0){
+    button0.style.backgroundColor='#007aa3'
+}
+
+// title of function prelly clear
+function changePinButtonBackgroundColorToNormal(button0){
+    let style = getComputedStyle(document.body);
+    button0.style.backgroundColor=style.getPropertyValue("--color-background-button-secondary-default")
+}
+
+// call when user click on pin button 
+function buttonTreatment(button0){
+  if(isMenuToPinSetup()){
+    deleteMenuToPin()
+    changePinButtonBackgroundColorToNormal(button0)
+  }else{
+    addMenuToPin(button0)
+    changePinButtonBackgroundColorToBlue(button0)
+  }
+}
+
+function addMenuToPin(button0){
+  let coords = button0.getBoundingClientRect()
+
+  // it's seems like their is a security
+  // you need to have an empty div and modify it later
+
+  /*
+  <div class="tooltip-layer" style="transform: translate(1265px, 386px); width: 40px; height: 30px;">
+      <div aria-describedby="78bed2e1b312703011f9d904af2a1698" class="tw-inline-flex tw-relative tw-tooltip-wrapper tw-tooltip-wrapper--show">
+          <div style="width: 40px; height: 30px;">
+          </div>
+          <div class="tw-tooltip tw-tooltip--align-center tw-tooltip--up" data-a-target="tw-tooltip-label" role="tooltip" id="78bed2e1b312703011f9d904af2a1698">
+              to replace
+          </div>
+      </div>
+  </div>
+
+  temp0.getBoundingClientRect()
+
+DOMRect { x: 1315.2166748046875, y: 386, width: 40, height: 30, top: 386, right: 1355.2166748046875, bottom: 416, left: 1315.2166748046875 }
+  */
+
+  let div0 = document.createElement('div')
+  let root = document.getElementById('root')
+
+  div0.className="tooltip-layer"
+  div0.id="menu-to-pin"
+
+  let div0_translate_x = Math.round(coords.x)
+  let div0_translate_y = Math.round(coords.y)
+  let div0_width = Math.round(coords.width)
+  let div0_height = Math.round(coords.height)
+  div0_translate_x+=div0_width/2
+  div0_translate_y-=div0_height/2
+  div0.style.transform="translate("+div0_translate_x+"px, "+div0_translate_y+"px)"
+  div0.style.width = div0_width
+  div0.style.height = div0_height
+
+  let div1 = document.createElement('div')
+  div1.className="tw-inline-flex tw-relative tw-tooltip__container tw-tooltip__container--show"
+
+  let div2 = document.createElement('div')
+  div2.style.width = div0_width
+  div2.style.height = div0_height
+
+  let div3 = document.createElement('div')
+  div3.className="tw-tooltip tw-tooltip--align-center tw-tooltip--up"
+  div3.id="menu-to-pin-tooltip"
+  div3.style.maxHeight='250px'
+  div3.style.maxWidth='250px'
+  div3.style.pointerEvents='all'
+
+  let groupsSection = sideGroupsModule.getGroupsSection()
+  // to get userName we just go in a HTML element and in figure element which contain aria-label and name of streamer
+  let mainDiv = button0.parentElement.parentElement.parentElement.parentElement.parentElement
+  let userName = mainDiv.children[0].getAttribute('href').substring(1)
+
+  let isMouseStillInsideMainDiv = true
+  mainDiv.addEventListener('mouseleave',()=>{
+    isMouseStillInsideMainDiv = false
+  })
+  uptextvAPI.getUserIDByName(userName).then((streamerID)=>{
+    if(isMouseStillInsideMainDiv){
+    // the time your getting streamerID user can have leave mainDiv
+    // if you still try to setup pinMenu it will create a bug 
+      let toAppend = new Array()
+      for(let x=0;x<groupsSection.length;x++){
+        // we parse array from the end to the beginning
+        // we do to get each groupSection name in the same order as displayed
+
+        let currentGroupSection = groupsSection[x]
+        let currentGroupID = currentGroupSection.getGroupID()
+        let currentGroupID_normal = currentGroupSection.getGroupID_normal()
+
+        /*
+        <div>
+            <input type="checkbox" style="vertical-align:middle;"/>
+            <label>pinned streamers</label>
+        </div>
+        */
+
+        let div_current_group = document.createElement('div')
+        div_current_group.id = currentGroupID
+        div_current_group.style.margin='0.25rem'
+
+        let input_current_group = document.createElement('input') // checkbox of the current group ( permit to add / delete streamer from current group )
+        input_current_group.type='checkbox'
+        input_current_group.style.verticalAlign='middle'
+        input_current_group.style.pointerEvents='all'
+        let streamerIndex = currentGroupSection.getStreamerIndex(streamerID)
+        
+        // return -1 if streamer isn't in list in current group section
+        if(streamerIndex!=-1){ 
+            input_current_group.checked=true
+        }
+        input_current_group.addEventListener('change', () => { 
+            // detect if checked to unchecked or unchecked to checked
+            if (input_current_group.checked) { 
+                // need to add streamer
+                currentGroupSection.addStreamer(streamerID)
+            } else { 
+                // need to delete streamer
+                currentGroupSection.deleteStreamer(streamerID)
+            }
+        })
+
+        let label_current_group = document.createElement('label')
+        label_current_group.innerText = currentGroupID_normal
+        label_current_group.style.marginLeft='0.25rem'
+        label_current_group.addEventListener('click',()=>{
+            if(input_current_group.checked){
+                input_current_group.checked=false
+                currentGroupSection.deleteStreamer(streamerID)
+            }else{
+                input_current_group.checked=true
+                currentGroupSection.addStreamer(streamerID)
+            }
+        })
+
+        div_current_group.append(input_current_group)
+        div_current_group.append(label_current_group)
+        toAppend.push(div_current_group)
+      }
+
+      root.children[0].append(div0)
+      div0.append(div1)
+      div1.append(div2)
+      div1.append(div3)
+      toAppend.forEach((div_current_group)=>{
+        div3.append(div_current_group)
+      })
+
+      // adding scroll bar only when it's necessary
+      if(div3.offsetHeight>250){
+          div3.style.overflowY='scroll'
+      }
+      if(div3.offsetWidth>250){
+          div3.style.overflowX='scroll'
+      }
+      autoCloseMenuToPinHandler(button0)
+    }
+  }).catch((err)=>{
+    debug.log(err)
+  })
+}
+
+var closeHandlerSetup = false
+// this part handle when menu to pin need to be close
+function autoCloseMenuToPinHandler(button0){
+  closeHandlerSetup = true
+
+  let closeMenuToPin = ()=>{
+      if(isMenuToPinSetup()){
+          deleteMenuToPin()
+          changePinButtonBackgroundColorToNormal(button0)
+      }
+      scrollableElement.removeEventListener('scroll',functionOnScrollEvent,false)
+  }
+
+  // this part handle when user scroll and you need to close menu to pin
+  // you have to call removeEventListener cuz scroll event is call many many times
+  let scrollableElement = $('.simplebar-scroll-content')[1]
+  let functionOnScrollEvent = ()=>{
+      closeMenuToPin()
+  }
+  scrollableElement.addEventListener('scroll',functionOnScrollEvent,false)
+
+// ---------------------------------------------------
+
+  let isInsideStreamerCard = false
+  let IsInsidePinMenu = false
+
+  let mainDiv = button0.parentElement.parentElement.parentElement.parentElement.parentElement
+
+  shouldClose = ()=>{
+    setTimeout(()=>{
+      if(!isInsideStreamerCard&&!IsInsidePinMenu){
+        if(!isMenuToPinSetup()) return;
+        deleteMenuToPin()
+        changePinButtonBackgroundColorToNormal(button0)
+        // we remove pin button
+        // we delete all child to fix duplication pin button bug
+        // children[0] is a html element
+        let mainDivChildren = mainDiv.children
+        for(let x=1;x<mainDivChildren.length;x++){
+          mainDivChildren[x].remove()
+        }
+        mainDiv.removeEventListener('mouseleave',parentDivMouseLeave,true)
+        mainDiv.removeEventListener('mouseenter',parentDivMouseEnter,true)
+        mainDiv.style.flexWrap=""
+        mainDiv.style.display=""
+        mainDiv.style.alignItems=""
+        mainDiv.children[0].style.setProperty ("width", "100%", "important")
+        closeHandlerSetup = false
+      }
+    },10)
+  }
+
+  let parentDivMouseLeave = ()=>{
+    isInsideStreamerCard=false
+    shouldClose()
+  }
+
+  let parentDivMouseEnter = ()=>{
+    isInsideStreamerCard=true
+  }
+
+  mainDiv.addEventListener('mouseleave',parentDivMouseLeave)
+  mainDiv.addEventListener('mouseenter',parentDivMouseEnter )
+
+  let menuToPin = document.getElementById('menu-to-pin-tooltip')
+  if(menuToPin!=null){
+    menuToPin.addEventListener('mouseleave',()=>{
+      IsInsidePinMenu=false
+      shouldClose()
+    })
+    menuToPin.addEventListener('mouseenter',()=>{
+      IsInsidePinMenu=true
+    })
+  }
+}
+
+function isMenuToPinSetup(){
+  return document.getElementById('menu-to-pin')!=null
+}
+
+function deleteMenuToPin(){
+    document.getElementById('menu-to-pin').remove()
+}
+
+module.exports = {
+    setup:function(_sideGroupsModule){
+        return new pinButton(_sideGroupsModule)
+    }
+}
+},{"../../utils/debug":67,"../../utils/uptextv-api":71,"../../utils/uptextv-image":72,"../../watchers/darkmode.js":74,"jquery":35}],62:[function(require,module,exports){
 const debug = require('../../utils/debug')
 const uptextvAPI = require('../../utils/uptextv-api')
 const uptextvIMG = require('../../utils/uptextv-image').get()
@@ -23758,7 +23370,7 @@ class SafeEventEmitter extends EventEmitter {
 }
 
 module.exports = SafeEventEmitter;
-},{"./debug":67,"events":28}],69:[function(require,module,exports){
+},{"./debug":67,"events":29}],69:[function(require,module,exports){
 const $ = require('jquery');
 const querystring = require('querystring');
 
@@ -23824,7 +23436,7 @@ module.exports = {
     }
 };
 
-},{"jquery":34,"querystring":41}],70:[function(require,module,exports){
+},{"jquery":35,"querystring":41}],70:[function(require,module,exports){
 const $ = require('jquery');
 const twitchAPI = require('./twitch-api');
 
@@ -24314,7 +23926,7 @@ module.exports = {
     }
 
 };
-},{"./twitch-api":69,"jquery":34}],71:[function(require,module,exports){
+},{"./twitch-api":69,"jquery":35}],71:[function(require,module,exports){
 const io = require('socket.io-client')
 const socket = io('https://api.uptextv.com',{transport:["websocket"]});
 
@@ -24536,8 +24148,20 @@ module.exports = {
                 }
             })
         })
-    }
+    },
 
+    getUserIDByName(userName){
+        return new Promise((resolve,reject)=>{
+            socket.emit('get_userID_by_name',userName)
+            socket.on('callback_get_userID_by_name',(reply,userID)=>{
+                if(reply=='done'){
+                    resolve(userID)
+                }else{
+                    reject(reply)
+                }
+            })
+        })
+    },
 }
 
   
@@ -24936,4 +24560,4 @@ module.exports = watcher_ => {
         waitForLoad('player').then(() => watcher.emit('load.player'));
     });
 };
-},{"../observers/dom":63,"../observers/history":64,"../utils/debug":67,"../utils/twitch":70,"jquery":34}]},{},[57]);
+},{"../observers/dom":63,"../observers/history":64,"../utils/debug":67,"../utils/twitch":70,"jquery":35}]},{},[56]);

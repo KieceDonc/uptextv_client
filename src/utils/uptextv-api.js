@@ -233,6 +233,12 @@ module.exports = {
             })
         })
     },
+
+    onBroadcastGroupsUpdate(fct){
+        socket.on('broadcast_groups_update',(groups)=>{
+            fct(groups)
+        })
+    }
 }
 
   
@@ -292,4 +298,3 @@ function getRamdomLetter(){
 function randomIntFromInterval(min, max) { // min and max included 
     return Math.floor(Math.random() * (max - min + 1) + min);
 }
-
